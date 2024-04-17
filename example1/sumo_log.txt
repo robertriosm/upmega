@@ -1,0 +1,18 @@
+***Starting server on port 54449 ***
+Cargando net-file desde 'example1/rilsa1.net.xml' ... hecho (2ms).
+Cargando additional-files desde 'example1/vtypes.add.xml' ... 
+Warning: The shape 'transport' for vType 'LKW' is deprecated, use 'truck' instead.
+hecho (1ms).
+Cargando additional-files desde 'example1/rilsa1_tls.add.xml' ... hecho (1ms).
+Carga finalizada.
+Simulation ended at time: 0.00
+Performance: 
+ Duration: 80.35s
+ TraCI-Duration: 0.00s
+ Real time factor: 0
+ UPS: 0.000000
+Vehicles: 
+ Inserted: 0 (Loaded: 24)
+ Running: 0
+ Waiting: 0
+
