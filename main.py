@@ -10,8 +10,8 @@ import sumolib
 import traci._trafficlight  
 from sga import sga
 
-# USE_UI = False
-USE_UI = True
+USE_UI = False
+# USE_UI = True
 
 
 if USE_UI:
