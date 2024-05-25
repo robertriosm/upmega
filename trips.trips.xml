@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2024-05-23 18:03:10.272309 by randomTrips.py v1_19_0+0000-baa66a0f364
+<!-- generated on 2024-05-24 16:31:01.115970 by randomTrips.py v1_19_0+0000-baa66a0f364
 <configuration>
     <net-file value="test.net.xml"/>
     <route-file value="map.rou.xml"/>
@@ -10,7 +10,7 @@
 </configuration>
 -->
 
-<!-- generated on 2024-05-23 18:03:10 by Eclipse SUMO duarouter Version 1.19.0
+<!-- generated on 2024-05-24 16:31:01 by Eclipse SUMO duarouter Version 1.19.0
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/duarouterConfiguration.xsd">
 
     <input>
@@ -38,8 +38,7 @@
 </configuration>
 -->
 
-<routes>
-    <!-- xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd" -->
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
     <trip id="0" depart="0.00" from="48273209#5" to="1159234896#1"/>
     <trip id="1" depart="1.00" from="381133556#0" to="30279769#4"/>
     <trip id="3" depart="3.00" from="65777805#2" to="30262982#0"/>

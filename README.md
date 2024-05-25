@@ -8,12 +8,11 @@ This is a list of documentation used along the learning process and investigatio
 
 - https://github.com/eclipse-sumo/sumo/tree/main/tests/complex/tutorial/hello/data
 - https://sumo.dlr.de/docs/Tutorials/Hello_SUMO.html
--
 - https://sumo.dlr.de/docs/TraCI.html#introduction_to_traci
 - https://sumo.dlr.de/docs/Networks/Import/OpenStreetMap.html
--
--
--
+- https://sumo.dlr.de/docs/Basics/Using_the_Command_Line_Applications.html
+- https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml
+- https://sumo.dlr.de/pydoc/traci.connection.html
 
 ### comandos para generar los poligonos:
 
