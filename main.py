@@ -9,10 +9,11 @@ import traci
 import sumolib
 import traci._trafficlight  
 from sga import sga
+import time
 
 
 # configuracion para el controlador
-USE_UI = False # cambiar a True para ver UI
+USE_UI = True # cambiar a True para ver UI
 CONFIG = "map.sumo.cfg" # .sumocfg or .sumo.cfg
 PORT = 8813
 SGA = sga()
@@ -35,11 +36,13 @@ traci.start(cmd=[SUMO_BINARY, "-c", CONFIG, "--start"], port=PORT)
 
 # ajustar la visualizacion si se utiliza
 if USE_UI:
-    traci.gui.setZoom("View #0", 1000)
+    traci.gui.setZoom("View #0", 10000)
 
 # Avanzar la simulación hasta el final
 while traci.simulation.getMinExpectedNumber() > 0:
     traci.simulationStep()
+
+traci.trafficlight.setParameter()
 
 # cerrar conexion al simulador
 traci.close()

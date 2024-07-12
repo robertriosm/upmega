@@ -14,23 +14,9 @@ class sga:
         self.MUTATION_RATE = 0.2
 
         # 
-        self.semaphores = semaphores
-        self.zone_map = zone_map
+        # self.semaphores = semaphores
+        # self.zone_map = zone_map
 
-
-
-    def get_semaphores(n, name):
-        semaforos = []
-        for i in range(n):
-            semaforo = {
-                'id': i,
-                'tiempo_verde': random.randint(1, 60),  # tiempo en segundos
-                'tiempo_rojo': random.randint(1, 60),  # tiempo en segundos
-            }
-            semaforos.append(semaforo)
-        
-        with open(f'{name}.json', 'w') as f:
-            json.dump(semaforos, f, indent=4)
     
     def fitness(self):
         pass
@@ -44,5 +30,5 @@ class sga:
     def select(self):
         pass
 
-    def execute(self):
+    def generate(self):
         pass
