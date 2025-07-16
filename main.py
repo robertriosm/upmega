@@ -8,12 +8,12 @@ import sys
 import traci
 import sumolib
 import traci._trafficlight  
-from sga import sga
+from utils.sga import sga
 import time
 
 
 # configuracion para el controlador
-USE_UI = True # cambiar a True para ver UI
+USE_UI = False # cambiar a True para ver UI
 CONFIG = "map.sumo.cfg" # .sumocfg or .sumo.cfg
 PORT = 8813
 SGA = sga()
@@ -29,20 +29,19 @@ else:
     else:
         sys.exit("please declare environment variable 'SUMO_HOME'")
     
-    SUMO_BINARY = sumolib.checkBinary("sumo")
- 
+    SUMO_BINARY = sumolib.checkBinary("sumo") # C:\Program Files (x86)\Eclipse\Sumo\bin\sumo.exe 
+    
 # iniciar conexion al simulador
 traci.start(cmd=[SUMO_BINARY, "-c", CONFIG, "--start"], port=PORT) 
 
 # ajustar la visualizacion si se utiliza
 if USE_UI:
-    traci.gui.setZoom("View #0", 10000)
+    traci.gui.setZoom("View #0", 500)
 
 # Avanzar la simulación hasta el final
 while traci.simulation.getMinExpectedNumber() > 0:
     traci.simulationStep()
 
-traci.trafficlight.setParameter()
 
 # cerrar conexion al simulador
 traci.close()
