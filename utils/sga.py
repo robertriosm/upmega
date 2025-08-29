@@ -2,7 +2,6 @@
 implementacion de SGA
 """
 
-import json
 import random
 
 class sga:
@@ -13,9 +12,8 @@ class sga:
         self.CROSSOVER_RATE = 0.4
         self.MUTATION_RATE = 0.2
 
-        # 
-        # self.semaphores = semaphores
-        # self.zone_map = zone_map
+        self.semaphores = self.set_semaphores()
+        self.zone_map = self.set_zone_map()
 
     
     def fitness(self):

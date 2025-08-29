@@ -9,3 +9,4 @@ print("checkBinary sumo =", sumolib.checkBinary("sumo"))
 print("exists? sumo.exe =", os.path.exists(os.path.join(os.environ["SUMO_HOME"], "bin", "sumo.exe")))
 
 print("SUMO_HOME =", os.environ.get("SUMO_HOME"))
+
