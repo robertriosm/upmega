@@ -31,9 +31,9 @@ class sga:
 
     def fitness(self, population: list[dict], goal_param: str):
         """
-        quita puntos dependiendo de la longitud del individuo
-        da puntos al individuo por cada caracter acertado
-        da puntos al individuo por cada caracter posicionado acertado
+        quita puntos dependiendo de que tanto se tarda el individuo
+        da puntos al individuo por cada carro que mejore su tiempo
+        da puntos al individuo por cada 
         penaliza la distancia entre palabras
         esta normalizado entre (0,1)
         """

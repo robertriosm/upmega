@@ -1,6 +1,14 @@
 # upmega
 
+## Prerrequisitos:
+
+- python 3
+- eclipse sumo
+
+
 SGA prototype traffic lights project
+
+
 
 ### Links
 
@@ -22,3 +30,12 @@ This is a list of documentation used along the learning process and investigatio
 ### para generar el archivo py
 
 - `python randomTrips.py -n test.net.xml -r map.rou.xml -e 1000 -l --validate`
+
+
+## generar random trips
+
+[Referencia de generacion de viajes aleatorios](https://www.youtube.com/watch?v=NOPn9sE0AdY)
+
+- traer un map.osm de openstreetmaps
+- tener el osmNetconvert.typ.xml
+- 

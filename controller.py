@@ -39,6 +39,9 @@ class controller:
         traci.start(cmd=[self.SUMO_BINARY, "-c", self.CONFIG, "--start"], port=self.PORT) 
     
 
+    def get_trafficlights_data(self):
+        pass 
+
     def execute_simulation(self):
         # Avanzar la simulación hasta el final
         while traci.simulation.getMinExpectedNumber() > 0:
