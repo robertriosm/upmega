@@ -3,17 +3,16 @@ implementacion de SGA
 """
 
 import random
+import numpy as np
+import pygad as ga
 
 class sga:
     def __init__(self) -> None:
-        # Configuracion inicial
+        # Configuracion inicial 
         self.POPULATION = 5
         self.GENERATIONS = 500
         self.CROSSOVER_RATE = 0.4
-        self.MUTATION_RATE = 0.2
-
-        # self.semaphores = self.set_semaphores()
-        # self.zone_map = self.set_zone_map()
+        self.MUTATION_RATE = 0.2 
 
     def gen_individual(self, value: str, score = 0): 
         """
