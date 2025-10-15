@@ -11,8 +11,8 @@ from sga import sga
 from controller import controller
 
 if __name__ == '__main__':
-    con = controller()
-    sga_ = sga()
+    con = controller(config='map.sumo.cfg')
+    sga_ = sga(controller = con)
 
     con.start_sumo_conn()
     con.execute_simulation()

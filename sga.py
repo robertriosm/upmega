@@ -5,14 +5,27 @@ implementacion de SGA
 import random
 import numpy as np
 import pygad as ga
+from controller import Controller
 
 class sga:
-    def __init__(self) -> None:
-        # Configuracion inicial 
-        self.POPULATION = 5
-        self.GENERATIONS = 500
-        self.CROSSOVER_RATE = 0.4
-        self.MUTATION_RATE = 0.2 
+    def __init__(self, 
+                 controller: Controller,
+                 population = 5,
+                 generations = 500,
+                 crossover_rate = 0.4,
+                 mutation_rate = 0.2
+                 ) -> None:
+        # Configuracion inicial de algoritmo
+        self.POPULATION = population
+        self.GENERATIONS = generations
+        self.CROSSOVER_RATE = crossover_rate
+        self.MUTATION_RATE = mutation_rate 
+        # Controlador para SUMO 
+        if not isinstance(controller, controller):
+            raise TypeError(
+                f"controller debe ser una instancia de Controller, pero se recibió {type(controller).__name__}"
+            )
+        self.controller = controller
 
     def gen_individual(self, value: str, score = 0): 
         """
