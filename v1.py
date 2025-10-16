@@ -7,8 +7,7 @@ import sys
 # import subprocess
 import traci
 import sumolib
-# import traci._trafficlight  
-from sga import sga
+# import traci._trafficlight 
 import time
 
 
@@ -16,7 +15,6 @@ import time
 USE_UI = False # cambiar a True para ver UI
 CONFIG = "map.sumo.cfg" # .sumocfg or .sumo.cfg
 PORT = 8813
-SGA = sga()
 
 
 # opcion para usar la UI
@@ -38,14 +36,14 @@ traci.start(cmd=[SUMO_BINARY, "-c", CONFIG, "--start"], port=PORT)
 if USE_UI:
     traci.gui.setZoom("View #0", 500)
 
-file = open('results.txt', mode='w', encoding='utf')
+# file = open('results.txt', mode='w', encoding='utf')
 
 # Avanzar la simulación hasta el final
-while traci.simulation.getMinExpectedNumber() > 0:
+# while traci.simulation.getMinExpectedNumber() > 0:
     # time.sleep(0.1)
-    traci.simulationStep()
+    # traci.simulationStep()
 
-# try:
+try:
 #     traci.vehicle
 #     traci.trafficlight
     # file.write(f'getIDList: {traci.trafficlight.getIDList().__repr__()}')
@@ -79,10 +77,12 @@ while traci.simulation.getMinExpectedNumber() > 0:
     # file.write(f'getProgram: {traci.trafficlight.getProgram('1438391835').__repr__()}')
     # file.write('\n')
     # file.write(f'getIDCount: {traci.trafficlight.getIDCount().__repr__()}')
-# except Exception as e: 
-#     print('hubo error: ', e)
+    ids = traci.trafficlight.getIDCount()
+    print(ids, type(ids))
+except Exception as e: 
+    print('hubo error: ', e)
 #     file.close()
 
 # cerrar conexion al simulador
 traci.close()
-file.close()
+# file.close()

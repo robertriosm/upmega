@@ -1,5 +1,5 @@
 """
-implementacion de SGA
+implementacion de SGA con controlador
 """
 
 import random
@@ -7,172 +7,97 @@ import numpy as np
 import pygad as ga
 from controller import Controller
 
-class sga:
+
+class TlSga:
     def __init__(self, 
                  controller: Controller,
                  population = 5,
                  generations = 500,
                  crossover_rate = 0.4,
-                 mutation_rate = 0.2
+                 mutation_rate = 0.2,
+                 mating_pool_size = 7,
+                 solutions_per_population = 50
                  ) -> None:
-        # Configuracion inicial de algoritmo
-        self.POPULATION = population
-        self.GENERATIONS = generations
-        self.CROSSOVER_RATE = crossover_rate
-        self.MUTATION_RATE = mutation_rate 
-        # Controlador para SUMO 
-        if not isinstance(controller, controller):
+        self._setup_config(population, generations, crossover_rate, mutation_rate, 
+                         mating_pool_size, solutions_per_population)
+        self._setup_controller(controller) 
+        self._setup_ga()
+
+
+    def _setup_config(self, population, generations, crossover_rate, mutation_rate, 
+                    mating_pool_size, solutions_per_population): 
+        # config 
+        self.population = population
+        self.generations = generations
+        self.crossover_rate = crossover_rate
+        self.mutation_rate = mutation_rate 
+        self.mating_pool_size = mating_pool_size
+        self.solutions_per_population = solutions_per_population
+        self.number_of_genes = self.get_num_genes()
+        # Metricas
+        self.last_fitness = 0
+
+
+    def _setup_controller(self, controller): 
+        if not isinstance(controller, Controller):
             raise TypeError(
                 f"controller debe ser una instancia de Controller, pero se recibió {type(controller).__name__}"
             )
         self.controller = controller
+    
 
-    def gen_individual(self, value: str, score = 0): 
+    def _setup_ga(self):
+        self.ga_instance = ga.GA(num_generations=self.generations,
+                                 num_parents_mating=self.mating_pool_size, 
+                                 fitness_func=self.fitness,
+                                 sol_per_pop=self.solutions_per_population, 
+                                 num_genes=self.number_of_genes,
+                                 on_generation=self.callback_generation)
+
+
+    def run_simulation(self):
+        self.controller.start_sumo_conn()
+        self.controller.execute_simulation()
+        self.controller.close_sumo_conn()
+    
+
+    def get_data():
+        ...
+    
+
+    def get_num_genes(self):
         """
-        gens an empty dict individual 
+        el planteamiento es que un sistema de semaforos es un individuo, por lo tanto,
+        un gen es una interseccion con semaforo
         """
-        return {'value': value, 'score': score}
+        return self.controller.get_tl_id_count()
+    
+
+    def callback_generation(self): 
+        print(f"Generation = {self.ga_instance.generations_completed}")
+        print(f"Fitness    = {self.ga_instance.best_solution()[1]}")
+        print(f"Change     = {self.ga_instance.best_solution()[1] - last_fitness}")
+        last_fitness = self.ga_instance.best_solution()[1]
 
 
-    def gen_initial_population(self, N: int):
+    def fitness(self):
         """
-        gens the initial population with a random value and score 0
+        F = w1T1 + w2T2 
+        donde: w1, w2 son los pesos y T1, T2 son tiempo en cola y tiempo de viaje
         """
-        return [self.gen_individual(''.join([random.choice(string.ascii_uppercase+' ') for _ in range(random.randint(0, 20))])) for _ in range(N)]
+        w1 = 0.8
+        w2 = 0.7
+
+        T1 = ...
+        T2 = ...
+
+        F = ...
+
+        return min(F)
 
 
-    def fitness(self, population: list[dict], goal_param: str):
+    def execute(self, N: int, Np: int, generations: int):
         """
-        quita puntos dependiendo de que tanto se tarda el individuo
-        da puntos al individuo por cada carro que mejore su tiempo
-        da puntos al individuo por cada 
-        penaliza la distancia entre palabras
-        esta normalizado entre (0,1)
-        """
-
-        for individual in population:
-            a = 0 
-            p = 0 
-            Lw = len(goal_param)
-            Lwi = len(individual["value"]) 
-            longer, shorter = (individual["value"], goal_param) if len(individual["value"]) > len(goal_param) else (goal_param, individual["value"]) 
-            Ls, Ll = len(shorter), len(longer)
-            longer_1, longer_2 = longer[:Ls], longer[Ls:]
-
-            for i in range(Ls):
-                if shorter[i] == longer_1[i]:
-                    a += 1
-                    continue
-                if shorter[i] in longer_1:
-                    p += 1
-
-            for c in longer_2:
-                if c in shorter:
-                    p += 1
-
-            individual['score'] = (100*a + 20*p - 40*abs(Lw - Lwi)) / Lw # ya tiene un score, pero es mejor trabajarlo solo con positivos
-
-
-        min_score = min(population, key=lambda i: i['score'])['score']
-        # max_score = max(population, key=lambda i: i['score'])['score']
-
-        for individual in population:
-            individual['score'] = individual['score'] + abs(min_score) # positivos
-
-
-    def select(self, population: list[dict], size: int): # TESTING
-        """
-        entrega una poblacion de un tamano para reproduccion
-        debe ser mas elitista para ofrecer rapida convergencia (es busqueda, no optimizacion)
-        """
-        values = [individual['value'] for individual in population]
-        scores = [individual['score'] for individual in population]
-
-        mating_pool = []
-
-        for _ in range(size):
-            mating_pool.append(random.choices(values, weights=scores, k=2))
-        
-        return mating_pool 
-
-
-    def crossover(self, mating_pool: list[list[str]]): # TESTING
-        """
-        how the mating pool creates new individuals from parents
-        2 gens to pass: characters and length 
-        parent1 and parent2 are string due to select's functionality and optimization
-        """
-        population = []
-
-        for parent1, parent2 in mating_pool:
-            Lp1, Lp2 = len(parent1), len(parent2)
-            Lc = random.choice([Lp1, Lp2])
-            value = ''
-            score = 0
-
-            for i in range(Lc):
-                try:
-                    c1 = parent1[i]
-                except:
-                    c1 = ''
-                try:
-                    c2 = parent2[i]
-                except:
-                    c2 = ''
-
-                value += random.choice([c1, c2])
-
-            population.append({"value": value, "score": score})
-
-        return population 
-
-
-    def inversion(self, individual: dict): # NEEDS TESTING!
-        value = individual["value"]
-        a, b = random.sample(range(len(value)), k=2).sort()
-        individual["value"] = value[:a-1] + value[a:b-1:-1] + value[b:]
-
-
-    def mutate(self, population: list[dict], p_char: float, p_len: float): # TESTING
-        """
-        population: the population dah
-        p_char: the smaller, the less chances to mutate a char in the string
-        p_len: the smaller, the less chances to mutate the length of the string
-        """
-        for individual in population:
-            value = ""
-
-            for c in individual["value"]:
-                if random.random() <= p_char:
-                    value += random.choice(string.ascii_uppercase)
-                else:
-                    value += c
-            
-                # esta parte no me gusta del todo pero por ahora saca el chance
-                if random.random() <= p_len:
-                    if random.random() > 0.5:
-                        value += ''.join(random.choice([i for i in string.ascii_uppercase+' '])) 
-                    else:
-                        value = value[:-1]
-            
-            individual["value"] = value
-
-
-    def convergence_criteria_met(self, population: list[dict], goal_param: str):
-        """
-        si un individuo ha alcanzado el objetivo, se detiene devuelve y se detiene el bucle
-        """
-        
-        for individual in population:
-            if individual["value"] == goal_param:
-                return individual
-
-        return False
-
-
-    def sga(self, G: str, N: int, Np: int, generations: int):
-        """
-        G: goal
         N: initial population
         Np: mating pool size
         generations: iterations to do
@@ -181,20 +106,15 @@ class sga:
         population = self.gen_initial_population(N)
 
         for _ in range(generations):
-
-            self.fitness(population, G)
-
+            self.fitness(population)
             ccm = self.convergence_criteria_met(population, G)
 
             if ccm:
                 return ccm
 
             mating_pool = self.select(population, Np)
-
             offspring = self.crossover(mating_pool)
-
             self.mutate(offspring, p_char=0.1, p_len=0.05)
-
             population = offspring
 
         return 'El SGA no pudo encontrar una solucion.'

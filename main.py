@@ -7,13 +7,11 @@ import sys
 import traci
 import sumolib
 import traci._trafficlight  
-from sga import sga
-from controller import controller
+from sga import TlSga
+from controller import Controller
 
 if __name__ == '__main__':
-    con = controller(config='map.sumo.cfg')
-    sga_ = sga(controller = con)
+    con = Controller(config='map.sumo.cfg')
+    sga = TlSga(controller = con)
 
-    con.start_sumo_conn()
-    con.execute_simulation()
-    con.close_sumo_conn()
+    # sga.run_simulation

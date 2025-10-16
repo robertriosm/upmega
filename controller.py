@@ -39,8 +39,11 @@ class Controller:
         traci.start(cmd=[self.SUMO_BINARY, "-c", self.CONFIG, "--start"], port=self.PORT) 
     
 
-    def get_trafficlights_data(self):
-        pass 
+    def get_tl_id_count(self):
+        """
+        retorna la cantidad de semaforos en un sistema
+        """
+        return traci.trafficlight.getIDCount()
 
 
     def execute_simulation(self):
