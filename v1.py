@@ -108,7 +108,7 @@ while traci.simulation.getMinExpectedNumber() > 0:
     
     # nuevos vehículos
     for vid in traci.simulation.getDepartedIDList():
-        veh_seen.add(vid)
+        veh_seen.add(vid) 
         veh_wait_time[vid] = 0.0
 
     # actualizar tiempos de espera en cada paso

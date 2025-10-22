@@ -61,10 +61,6 @@ class TlSga:
         self.controller.close_sumo_conn()
     
 
-    def get_data():
-        ...
-    
-
     def get_num_genes(self):
         """
         el planteamiento es que un sistema de semaforos es un individuo, por lo tanto,
@@ -78,43 +74,56 @@ class TlSga:
         print(f"Fitness    = {self.ga_instance.best_solution()[1]}")
         print(f"Change     = {self.ga_instance.best_solution()[1] - last_fitness}")
         last_fitness = self.ga_instance.best_solution()[1]
+    
+    def get_avg_waiting_time(self, data): ...
+
+    def get_avg_travel_time(self, data): ...
 
 
-    def fitness(self):
+    def fitness(self, solution, solution_idx):
         """
+        solution: cada 
+        solution_idx: 
+
         F = w1T1 + w2T2 
         donde: w1, w2 son los pesos y T1, T2 son tiempo en cola y tiempo de viaje
         """
         w1 = 0.8
         w2 = 0.7
 
-        T1 = ...
-        T2 = ...
+        simulation = self.controller.execute_simulation()
 
-        F = ...
+        T1 = self.get_avg_waiting_time(simulation['T1'])
+        T2 = self.get_avg_travel_time(simulation['T2'])
 
-        return min(F)
+        F = w1*T1 + w2*T2
+
+        fitness = 1.0 / F
+
+        return fitness
 
 
-    def execute(self, N: int, Np: int, generations: int):
+    def execute(self):
         """
         N: initial population
         Np: mating pool size
         generations: iterations to do
         """
 
-        population = self.gen_initial_population(N)
+        # population = self.gen_initial_population(N)
 
-        for _ in range(generations):
-            self.fitness(population)
-            ccm = self.convergence_criteria_met(population, G)
+        # for _ in range(generations):
+        #     self.fitness(population)
+        #     ccm = self.convergence_criteria_met(population, G)
 
-            if ccm:
-                return ccm
+        #     if ccm:
+        #         return ccm
 
-            mating_pool = self.select(population, Np)
-            offspring = self.crossover(mating_pool)
-            self.mutate(offspring, p_char=0.1, p_len=0.05)
-            population = offspring
+        #     mating_pool = self.select(population, Np)
+        #     offspring = self.crossover(mating_pool)
+        #     self.mutate(offspring, p_char=0.1, p_len=0.05)
+        #     population = offspring
 
-        return 'El SGA no pudo encontrar una solucion.'
+        # return 'El SGA no pudo encontrar una solucion.'
+
+        self.ga_instance.run()

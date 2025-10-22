@@ -48,8 +48,13 @@ class Controller:
 
     def execute_simulation(self):
         """
-        Avanzar la simulación hasta el final
+        Avanzar la simulación hasta el final.
+        Devuelve:
+            - tiempos de espera en colas
+            - tiempos de viajes
         """
+
+
         while traci.simulation.getMinExpectedNumber() > 0:
             traci.simulationStep()
 
