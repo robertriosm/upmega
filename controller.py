@@ -38,12 +38,50 @@ class Controller:
         """
         traci.start(cmd=[self.SUMO_BINARY, "-c", self.CONFIG, "--start"], port=self.PORT) 
     
+    
+    def logic(self, logic, new_phases):
+        return traci.trafficlight.Logic(
+                programID=logic.programID,
+                type=logic.type,
+                currentPhaseIndex=logic.currentPhaseIndex,
+                phases=tuple(new_phases),
+                subParameter=logic.subParameter)
+
+
+    def phase(self, phase, duration):
+        return traci.trafficlight.Phase(
+                    duration=float(duration),
+                    state=phase.state,
+                    minDur=phase.minDur,
+                    maxDur=phase.maxDur)
+    
 
     def get_tl_id_count(self):
         """
         retorna la cantidad de semaforos en un sistema
         """
         return traci.trafficlight.getIDCount()
+    
+    
+    def get_tl_logic(self, tl_id):
+        """
+        retorna la logica (fases, tiempos) de una interseccion con semaforo
+        """
+        return traci.trafficlight.getAllProgramLogics(tlsID=tl_id)[0]
+    
+
+    def set_tl_logic(self, tls_id, new_logic):
+        """
+        asigna nueva logica (fases, tiempos) de una interseccion con semaforo
+        """
+        traci.trafficlight.setProgramLogic(tlsID=tls_id, logic=new_logic)
+
+
+    def get_tl_ids(self):
+        """
+        retorna una lista con los ids de los semaforos
+        """
+        return traci.trafficlight.getIDList()
 
 
     def execute_simulation(self):
@@ -77,6 +115,17 @@ class Controller:
                     veh_tt[veh_id] = travel_time
         
         return veh_wt, veh_tt
+
+
+    def build_genome(self):
+        genome = []
+        phase_counts = []
+        for tl_id in self.get_tl_ids():
+            logic = traci.trafficlight.getAllProgramLogics(tl_id)[0]
+            phase_counts.append(len(logic.phases))
+            for phase in logic.phases:
+                genome.append(phase.duration)
+        return genome, phase_counts
 
 
     def close_sumo_conn(self):

@@ -2,7 +2,6 @@
 implementacion de SGA con controlador
 """
 
-import random
 import numpy as np
 import pygad as ga
 from controller import Controller
@@ -67,6 +66,10 @@ class TlSga:
         un gen es una interseccion con semaforo
         """
         return self.controller.get_tl_id_count()
+
+
+    def get_tl_ids(self):
+        return self.controller.get_tl_ids()
     
 
     def callback_generation(self): 
@@ -75,19 +78,51 @@ class TlSga:
         print(f"Change     = {self.ga_instance.best_solution()[1] - last_fitness}")
         last_fitness = self.ga_instance.best_solution()[1]
     
-    def get_avg_waiting_time(self, data): ...
 
-    def get_avg_travel_time(self, data): ...
+    def get_avg_waiting_time(self, data):
+        return np.sum(np.array(data)) / len(data)
+
+
+    def get_avg_travel_time(self, data): 
+        return np.sum(np.array(data)) / len(data)
+
+
+    def apply_solution(self, solution): 
+        """
+        aplicar configuracion de semaforos encontrada por algoritmo a la network  
+        """
+        phase_counts = []
+
+        for tl_id in self.get:
+            logic = self.controller.get_tl_logic(tl_id)
+            phase_counts.append(len(logic.phases))
+
+        offsets = np.cumsum([0] + phase_counts)
+
+        for i, tl_id in enumerate(self.get):
+            start, end = offsets[i], offsets[i+1]
+            durations = solution[start:end]
+
+            logic = self.controller.get_tl_logic(tl_id)
+            new_phases = []
+
+            for j, phase in enumerate(logic.phases):
+                new_phases.append(self.controller.phase(phase, durations[j]))
+
+            new_logic = self.controller.logic(logic, new_phases)
+            self.controller.set_tl_logic(tl_id, new_logic)
 
 
     def fitness(self, solution, solution_idx):
         """
-        solution: cada 
-        solution_idx: 
+        solution: cada configuracion de semaforos a evaluar
+        solution_idx: el id de la config
 
         F = w1T1 + w2T2 
         donde: w1, w2 son los pesos y T1, T2 son tiempo en cola y tiempo de viaje
         """
+        self.apply_solution(solution)
+
         w1 = 0.8
         w2 = 0.7
 
@@ -109,21 +144,4 @@ class TlSga:
         Np: mating pool size
         generations: iterations to do
         """
-
-        # population = self.gen_initial_population(N)
-
-        # for _ in range(generations):
-        #     self.fitness(population)
-        #     ccm = self.convergence_criteria_met(population, G)
-
-        #     if ccm:
-        #         return ccm
-
-        #     mating_pool = self.select(population, Np)
-        #     offspring = self.crossover(mating_pool)
-        #     self.mutate(offspring, p_char=0.1, p_len=0.05)
-        #     population = offspring
-
-        # return 'El SGA no pudo encontrar una solucion.'
-
         self.ga_instance.run()
