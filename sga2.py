@@ -17,10 +17,9 @@ def fitness(ga_instance, solution, solution_idx):
     Calculating the fitness value of each solution in the current population.
     The fitness function calulates the sum of products between each input and its corresponding weight.
     
-    ga_instance: pygad.GA ???
-    solution: individual ???
-    solution_idx: ???
-    
+    ga_instance: pygad.GA 
+    solution: individual, en este caso un arreglo propuesto para multiplicarlo por el input y llegar al 44 
+    solution_idx: el indice o id de la solucion
     """
     
     output = numpy.sum(solution*function_inputs)

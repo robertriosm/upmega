@@ -85,30 +85,29 @@ if USE_UI:
 # ===========================
 # Simulación y cálculo de T_viaje y T_espera
 # ===========================
-# veh_wt = dict()         # {veh_id: tiempo_acumulado}
-# veh_travel_times = {}   # {vehID: tiempo_inicio}
-# completed_times = {}    # lista de tiempos de viaje completados
+veh_wt = dict()         # {veh_id: tiempo_acumulado}
+veh_travel_times = {}   # {vehID: tiempo_inicio}
+completed_times = {}    # lista de tiempos de viaje completados
 
-traci.trafficlight.set
 
 while traci.simulation.getMinExpectedNumber() > 0:
     traci.simulationStep()
 
     # Sobreescribir el tiempo acumulado de los vehiculos hasta que terminan su recorrido
-    # for veh_id in traci.vehicle.getIDList():
-    #     veh_wt[veh_id] = traci.vehicle.getAccumulatedWaitingTime(vehID=veh_id)
+    for veh_id in traci.vehicle.getIDList():
+        veh_wt[veh_id] = traci.vehicle.getAccumulatedWaitingTime(vehID=veh_id)
     
-    # # Vehiculos nuevos que entran a la simulación
-    # for veh_id in traci.simulation.getDepartedIDList():
-    #     veh_travel_times[veh_id] = traci.simulation.getTime()
+    # Vehiculos nuevos que entran a la simulación
+    for veh_id in traci.simulation.getDepartedIDList():
+        veh_travel_times[veh_id] = traci.simulation.getTime()
 
-    # # Vehiculos que terminan su recorrido
-    # for veh_id in traci.simulation.getArrivedIDList():
-    #     if veh_id in veh_travel_times:
-    #         start_time = veh_travel_times.pop(veh_id)
-    #         end_time = traci.simulation.getTime()
-    #         travel_time = end_time - start_time
-    #         completed_times[veh_id] = travel_time
+    # Vehiculos que terminan su recorrido
+    for veh_id in traci.simulation.getArrivedIDList():
+        if veh_id in veh_travel_times:
+            start_time = veh_travel_times.pop(veh_id)
+            end_time = traci.simulation.getTime()
+            travel_time = end_time - start_time
+            completed_times[veh_id] = travel_time
 
 # ===========================
 # Resultado final
