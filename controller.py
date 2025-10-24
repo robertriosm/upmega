@@ -20,6 +20,7 @@ class Controller:
         self.CONFIG = config # .sumocfg or .sumo.cfg
         self.PORT = port
         self.SUMO_BINARY = self.get_sumo_binary()
+        self.start_sumo_conn() # iniciar la conexion 
 
 
     def get_sumo_binary(self):
@@ -36,9 +37,12 @@ class Controller:
         """
         iniciar la conexion a SUMO
         """
-        traci.start(cmd=[self.SUMO_BINARY, "-c", self.CONFIG, "--start"], port=self.PORT) 
+        try:
+            traci.start(cmd=[self.SUMO_BINARY, "-c", self.CONFIG, "--start"], port=self.PORT) 
+        except Exception as e:
+            raise Exception(f"{e}\n-> No se pudo establecer una conexion con sumo.")
     
-    
+
     def logic(self, logic, new_phases):
         return traci.trafficlight.Logic(
                 programID=logic.programID,
@@ -102,7 +106,7 @@ class Controller:
             for veh_id in traci.vehicle.getIDList():
                 veh_wt[veh_id] = traci.vehicle.getAccumulatedWaitingTime(vehID=veh_id)
             
-            # Vehiculos nuevos que entran a la simulación
+            # Vehiculos nuevos que entran a la simulacion
             for veh_id in traci.simulation.getDepartedIDList():
                 veh_initial_tt[veh_id] = traci.simulation.getTime()
 
