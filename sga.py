@@ -62,10 +62,8 @@ class TlSga:
             F = w1T1 + w2T2 
             donde: w1, w2 son los pesos y T1, T2 son tiempo en cola y tiempo de viaje
             """
-            w1 = 0.8
-            w2 = 0.7
-
-            self.apply_solution(solution) # cargar solucion calculada
+            w1, w2 = 0.8, 0.7
+            self.apply_solution(solution)                         # resetear y cargar solucion calculada
             veh_wt, veh_tt = self.controller.execute_simulation() # correr simulacion y obtener datos
 
             T1 = self.calc_avg(veh_wt)

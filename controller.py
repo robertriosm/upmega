@@ -42,6 +42,13 @@ class Controller:
         except Exception as e:
             raise Exception(f"{e}\n-> No se pudo establecer una conexion con sumo.")
     
+    
+    def reset(self):
+        """
+        sirve para resetear la simulacion 
+        """
+        traci.load(args=["-c", self.CONFIG, "--start"])
+
 
     def logic(self, logic, new_phases):
         return traci.trafficlight.Logic(
