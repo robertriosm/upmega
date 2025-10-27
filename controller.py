@@ -25,15 +25,15 @@ class Controller:
         guardar la network en su estado inicial para realizar 
         carga rapida y dinamica desde archivo 
         """
-        if "initial_state.xml" not in os.listdir():
-            traci.simulation.saveState("initial_state.xml")
+        if "initial_state.state.xml" not in os.listdir():
+            traci.simulation.saveState("initial_state.state.xml")
     
 
-    def save_solution(self, filename):
+    def save_solution(self, filename = "solution"):
         """
         guardar el estado final de la network con la solucion hallada
         """
-        traci.simulation.saveState(fileName=filename)
+        traci.simulation.saveState(f"{filename}.state.xml")
 
 
     def get_sumo_binary(self):
@@ -46,14 +46,17 @@ class Controller:
             return r"C:\Program Files (x86)\Eclipse\Sumo\bin\sumo.exe"
     
 
-    def start_sumo_conn(self):
+    def start_sumo_conn(self, superfast = True):
         """
         iniciar la conexion a SUMO
         """
         try:
-            traci.start(cmd=[self.SUMO_BINARY, "-c", self.CONFIG, "--start"], port=self.PORT) 
-        except Exception as e:
-            raise Exception(f"{e}\n-> No se pudo establecer una conexion con sumo.")
+            cmd = [self.SUMO_BINARY, "-c", self.CONFIG, "--start"] 
+            if superfast: 
+                cmd += ["--no-step-log", "true", "--no-warnings", "true"] 
+            traci.start(cmd, port=self.PORT) 
+        except Exception as e: 
+            raise RuntimeError(f"Error iniciando SUMO: {e}") 
     
     
     def reset(self):
@@ -62,7 +65,7 @@ class Controller:
         Se optimizo respecto a traci.load para mejorar la 
         velocidad de ejecucion y reducir complejidad computacional
         """
-        traci.simulation.loadState("initial_state.xml") 
+        traci.simulation.loadState("initial_state.state.xml") 
 
 
     def logic(self, logic, new_phases):
@@ -143,10 +146,10 @@ class Controller:
         return veh_wt, veh_tt
 
 
-    def build_genome(self):
+    def build_genome(self, tl_ids):
         genome = []
         phase_counts = []
-        for tl_id in self.get_tl_ids():
+        for tl_id in tl_ids:
             logic = traci.trafficlight.getAllProgramLogics(tl_id)[0]
             phase_counts.append(len(logic.phases))
             for phase in logic.phases:

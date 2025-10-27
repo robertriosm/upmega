@@ -98,7 +98,7 @@ class TlSga:
 
     def calc_avg(self, data):
         """
-        dada una lista, 
+        obtener el promedio de una lista
         """
         return np.sum(np.array(data)) / len(data)
 
@@ -129,6 +129,6 @@ class TlSga:
         """
         self.ga_instance.run() 
         self.ga_instance.save(filename)
-        self.controller.save_solution(filename)
+        self.controller.save_solution()
         self.ga_instance.plot_fitness()
 
