@@ -3,6 +3,7 @@ clase dedicada a la interaccion con SUMO y comunicacion con el algoritmo
 """
 
 import traci
+import os
 
 
 class Controller:
@@ -16,6 +17,12 @@ class Controller:
         self.PORT = port
         self.SUMO_BINARY = self.get_sumo_binary()
         self.start_sumo_conn() # iniciar la conexion 
+        self.save_state() # guardar la config inicial si no existe en root
+
+
+    def save_state(self):
+        if "initial_state.xml" not in os.listdir():
+            traci.simulation.saveState("initial_state.xml")
 
 
     def get_sumo_binary(self):
@@ -41,8 +48,10 @@ class Controller:
     def reset(self):
         """
         sirve para resetear la simulacion 
+        Se optimizo respecto a traci.load para mejorar la 
+        velocidad de ejecucion y reducir complejidad computacional
         """
-        traci.load(args=["-c", self.CONFIG, "--start"])
+        traci.simulation.loadState("initial_state.xml") 
 
 
     def logic(self, logic, new_phases):
@@ -121,15 +130,6 @@ class Controller:
                     veh_tt[veh_id] = travel_time
         
         return veh_wt, veh_tt
-    
-
-    def build_initial_population_data(tl_ids):
-        all_durations = []
-        for tl_id in tl_ids:
-            logic = traci.trafficlight.getAllProgramLogics(tl_id)[0]
-            for phase in logic.phases:
-                all_durations.append(phase.duration)
-        return all_durations
 
 
     def build_genome(self):
