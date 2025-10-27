@@ -2,12 +2,7 @@
 clase dedicada a la interaccion con SUMO y comunicacion con el algoritmo 
 """
 
-
-import os
-import sys
 import traci
-import sumolib
-import time
 
 
 class Controller:
@@ -126,6 +121,15 @@ class Controller:
                     veh_tt[veh_id] = travel_time
         
         return veh_wt, veh_tt
+    
+
+    def build_initial_population_data(tl_ids):
+        all_durations = []
+        for tl_id in tl_ids:
+            logic = traci.trafficlight.getAllProgramLogics(tl_id)[0]
+            for phase in logic.phases:
+                all_durations.append(phase.duration)
+        return all_durations
 
 
     def build_genome(self):

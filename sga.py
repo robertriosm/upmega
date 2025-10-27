@@ -34,7 +34,6 @@ class TlSga:
         self.mutation_rate = mutation_rate 
         self.mating_pool_size = mating_pool_size
         self.solutions_per_population = solutions_per_population
-        self.number_of_genes = self.get_num_genes()
         self.last_fitness = 0
 
 
@@ -56,9 +55,6 @@ class TlSga:
 
         def fitness(ga_instance, solution, solution_idx):
             """
-            solution: cada configuracion de semaforos a evaluar
-            solution_idx: el id de la config
-
             F = w1T1 + w2T2 
             donde: w1, w2 son los pesos y T1, T2 son tiempo en cola y tiempo de viaje
             """
@@ -70,24 +66,28 @@ class TlSga:
             T2 = self.calc_avg(veh_tt)
 
             F = w1*T1 + w2*T2 
-            fitness = 1.0 / F 
+            fitness = 1.0 / (F + 1e-6) 
 
-            return fitness
+            return fitness 
+        
+        def callback_generation(ga_instance): 
+            """
+            se ejecuta 1 vez por cada generacion transcurrida para dar informacion
+            """
+            print(f"Generation = {ga_instance.generations_completed}")
+            print(f"Fitness    = {ga_instance.best_solution()[1]}")
+            print(f"Change     = {ga_instance.best_solution()[1] - last_fitness}")
+            last_fitness = ga_instance.best_solution()[1]
+        
+        tl_ids = self.get_tl_ids()
+        base_genome, phase_counts = self.controller.build_genome(tl_ids)
         
         self.ga_instance = ga.GA(num_generations=self.generations,
                                  num_parents_mating=self.mating_pool_size, 
                                  fitness_func=fitness,
                                  sol_per_pop=self.solutions_per_population, 
-                                 num_genes=self.number_of_genes,
-                                 on_generation=self.callback_generation)
-    
-
-    def get_num_genes(self):
-        """
-        el planteamiento es que un sistema de semaforos es un individuo, por lo tanto,
-        un gen es una interseccion con semaforo
-        """
-        return self.controller.get_tl_id_count()
+                                 num_genes=len(base_genome),
+                                 on_generation=callback_generation)
 
 
     def get_tl_ids(self):
@@ -95,16 +95,6 @@ class TlSga:
         retorna una lista con los ids de los semaforos
         """
         return self.controller.get_tl_ids()
-    
-
-    def callback_generation(self): 
-        """
-        se ejecuta 1 vez por cada generacion transcurrida para dar informacion
-        """
-        print(f"Generation = {self.ga_instance.generations_completed}")
-        print(f"Fitness    = {self.ga_instance.best_solution()[1]}")
-        print(f"Change     = {self.ga_instance.best_solution()[1] - last_fitness}")
-        last_fitness = self.ga_instance.best_solution()[1]
     
 
     def calc_avg(self, data):
