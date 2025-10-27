@@ -16,7 +16,7 @@ print("Semáforos:", tl_ids)
 
 for tl in tl_ids:
     logics = traci.trafficlight.getAllProgramLogics(tl)
-    print(f"{tl}: {len(logics[0].phases)} fases")
+    print(f"{tl}: {logics} fases")
 
 # Cerrar conexión
 traci.close()

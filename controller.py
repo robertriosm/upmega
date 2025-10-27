@@ -21,8 +21,19 @@ class Controller:
 
 
     def save_state(self):
+        """
+        guardar la network en su estado inicial para realizar 
+        carga rapida y dinamica desde archivo 
+        """
         if "initial_state.xml" not in os.listdir():
             traci.simulation.saveState("initial_state.xml")
+    
+
+    def save_solution(self, filename):
+        """
+        guardar el estado final de la network con la solucion hallada
+        """
+        traci.simulation.saveState(fileName=filename)
 
 
     def get_sumo_binary(self):

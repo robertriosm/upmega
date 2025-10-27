@@ -84,7 +84,9 @@ class TlSga:
                                  parent_selection_type="sss",
                                  crossover_type="single_point",
                                  mutation_type="random",
-                                 mutation_probability=0.1)
+                                 mutation_probability=0.1,
+                                 save_solutions=True,
+                                 save_best_solutions=True)
 
 
     def get_tl_ids(self):
@@ -103,7 +105,7 @@ class TlSga:
 
     def apply_solution(self, solution, tls_ids, offsets): 
         """
-        aplicar configuracion de semaforos encontrada por algoritmo a la network  
+        aplicar configuracion de semaforos encontrada por algoritmo a la network 
         """
         self.controller.reset()
 
@@ -121,8 +123,12 @@ class TlSga:
             self.controller.set_tl_logic(tl_id, new_logic)
 
 
-    def execute(self):
+    def execute(self, filename):
         """
-        correr el GA con la configuracion cargada
+        correr el GA con la configuracion cargada, mostrar y guardar resultados
         """
-        self.ga_instance.run()
+        self.ga_instance.run() 
+        self.ga_instance.save(filename)
+        self.controller.save_solution(filename)
+        self.ga_instance.plot_fitness()
+
