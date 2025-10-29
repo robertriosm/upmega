@@ -12,28 +12,30 @@ class TlSga:
                  controller: Controller,
                  population = 5,
                  generations = 500,
-                 crossover_rate = 0.4,
-                 mutation_rate = 0.2,
                  mating_pool_size = 7,
-                 solutions_per_population = 50
+                 crossover_type = "single_point",
+                 mutation_type = "random",
+                 selection_type = "sss",
+                 mutation_probability = 0.1
                  ) -> None:
         self._setup_controller(controller) 
-        self._setup_config(population, generations, crossover_rate, 
-                           mutation_rate, mating_pool_size, solutions_per_population)
+        self._setup_config(population, generations, crossover_type, 
+                           mutation_type, mating_pool_size, selection_type, mutation_probability)
         self._setup_ga()
 
 
-    def _setup_config(self, population, generations, crossover_rate, 
-                      mutation_rate, mating_pool_size, solutions_per_population): 
+    def _setup_config(self, population, generations, crossover_type, 
+                      mutation_type, mating_pool_size, selection_type, mutation_probability): 
         """
         inicializar parametros del GA
         """
         self.population = population
         self.generations = generations
-        self.crossover_rate = crossover_rate
-        self.mutation_rate = mutation_rate 
+        self.crossover_type = crossover_type
+        self.mutation_type = mutation_type 
         self.mating_pool_size = mating_pool_size
-        self.solutions_per_population = solutions_per_population
+        self.selection_type = selection_type
+        self.mutation_probability = mutation_probability
         self.last_fitness = 0
 
 
@@ -58,12 +60,13 @@ class TlSga:
             F = w1T1 + w2T2 
             donde: w1, w2 son los pesos y T1, T2 son tiempo en cola y tiempo de viaje
             """
-            w1, w2 = 0.8, 0.7
-            self.apply_solution(solution, tls_ids, offsets)       # resetear y cargar solucion 
-            veh_wt, veh_tt = self.controller.execute_simulation() # correr simulacion y obtener datos
+            self.apply_solution(solution, tls_ids, offsets)
+            veh_wt, veh_tt = self.controller.execute_simulation()
 
             T1 = self.calc_avg(veh_wt)
             T2 = self.calc_avg(veh_tt)
+            w1 = 1
+            w2 = 1
 
             F = w1*T1 + w2*T2 
             fitness = 1.0 / (F + 1e-6) 
@@ -79,13 +82,12 @@ class TlSga:
         self.ga_instance = ga.GA(num_generations=self.generations,
                                  num_parents_mating=self.mating_pool_size, 
                                  fitness_func=fitness_func,
-                                 sol_per_pop=self.solutions_per_population, 
+                                 sol_per_pop=self.population, 
                                  num_genes=len(base_genome),
-                                 parent_selection_type="sss",
-                                 crossover_type="single_point",
-                                 mutation_type="random",
-                                 mutation_probability=0.1,
-                                 save_solutions=True,
+                                 parent_selection_type=self.selection_type,
+                                 crossover_type=self.crossover_type,
+                                 mutation_type=self.mutation_type,
+                                 mutation_probability=self.mutation_probability,
                                  save_best_solutions=True)
 
 
@@ -100,13 +102,30 @@ class TlSga:
         """
         obtener el promedio de una lista
         """
-        return np.sum(np.array(data)) / len(data)
+        if data is None:
+            return 0.0
+        if isinstance(data, dict):
+            vals = list(data.values())
+        else:
+            vals = list(data)
+        if len(vals) == 0:
+            return 0.0
+        return float(np.mean(vals))
 
 
     def apply_solution(self, solution, tls_ids, offsets): 
         """
         aplicar configuracion de semaforos encontrada por algoritmo a la network 
         """
+        if len(solution) < (offsets[-1]):
+            raise ValueError("Solution length does not match expected number of genes.")
+        
+        # sanitizar valores 
+        # for j, phase in enumerate(logic.phases):
+        #     val = float(durations[j])
+        #     val = max(phase.minDur, min(phase.maxDur, val))
+        #     new_phases.append(self.controller.phase(phase, val))
+
         self.controller.reset()
 
         for i, tl_id in enumerate(tls_ids): 
@@ -127,7 +146,7 @@ class TlSga:
         """
         correr el GA con la configuracion cargada, mostrar y guardar resultados
         """
-        self.ga_instance.run() 
+        self.ga_instance.run()
         self.ga_instance.save(filename)
         self.controller.save_solution()
         self.ga_instance.plot_fitness()

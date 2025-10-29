@@ -3,6 +3,7 @@ clase dedicada a la interaccion con SUMO y comunicacion con el algoritmo
 """
 
 import traci
+import traci.constants as tc
 import os
 
 
@@ -11,21 +12,16 @@ class Controller:
                  config = "./map.sumo.cfg", 
                  use_ui = False, 
                  port = 8813) -> None:
-        
-        self.USE_UI = use_ui # cambiar a True para ver UI
         self.CONFIG = config # .sumocfg or .sumo.cfg
         self.PORT = port
         self.SUMO_BINARY = self.get_sumo_binary()
-        self.start_sumo_conn() # iniciar la conexion 
-        self.save_state() # guardar la config inicial si no existe en root
-
 
     def save_state(self):
         """
         guardar la network en su estado inicial para realizar 
         carga rapida y dinamica desde archivo 
         """
-        if "initial_state.state.xml" not in os.listdir():
+        if not os.path.exists("initial_state.state.xml"):
             traci.simulation.saveState("initial_state.state.xml")
     
 
@@ -40,20 +36,21 @@ class Controller:
         """
         obtener la ruta del programa para conectar una sesion
         """
-        if self.USE_UI:
-            return r"C:\Program Files (x86)\Eclipse\Sumo\bin\sumo-gui.exe"
-        else:
-            return r"C:\Program Files (x86)\Eclipse\Sumo\bin\sumo.exe"
+        return r"C:\Program Files (x86)\Eclipse\Sumo\bin\sumo.exe"
     
 
     def start_sumo_conn(self, superfast = True):
         """
         iniciar la conexion a SUMO
         """
+        if not os.path.exists(self.CONFIG):
+            raise FileNotFoundError(f"SUMO config no existe: {self.CONFIG}")
+        
+        cmd = [self.SUMO_BINARY, "-c", self.CONFIG, "--start"] 
+        if superfast: 
+            cmd += ["--no-warnings", "true"] # "--no-step-log", "true",
+
         try:
-            cmd = [self.SUMO_BINARY, "-c", self.CONFIG, "--start"] 
-            if superfast: 
-                cmd += ["--no-step-log", "true", "--no-warnings", "true"] 
             traci.start(cmd, port=self.PORT) 
         except Exception as e: 
             raise RuntimeError(f"Error iniciando SUMO: {e}") 
@@ -65,7 +62,7 @@ class Controller:
         Se optimizo respecto a traci.load para mejorar la 
         velocidad de ejecucion y reducir complejidad computacional
         """
-        traci.simulation.loadState("initial_state.state.xml") 
+        traci.load(['sumo', '-c', 'map.sumo.cfg', '--tripinfo-output', 'new_tripinfo.xml']) 
 
 
     def logic(self, logic, new_phases):
@@ -96,14 +93,14 @@ class Controller:
         """
         retorna la logica (fases, tiempos) de una interseccion con semaforo
         """
-        return traci.trafficlight.getAllProgramLogics(tlsID=tl_id)[0]
+        return traci.trafficlight.getAllProgramLogics(tl_id)[0]
     
 
     def set_tl_logic(self, tls_id, new_logic):
         """
         asigna nueva logica (fases, tiempos) de una interseccion con semaforo
         """
-        traci.trafficlight.setProgramLogic(tlsID=tls_id, logic=new_logic)
+        traci.trafficlight.setProgramLogic(tls_id, new_logic)
 
 
     def get_tl_ids(self):
@@ -114,37 +111,39 @@ class Controller:
 
 
     def execute_simulation(self):
-        """
-        Avanzar la simulación hasta el final.
-        Devuelve:
-            - tiempos de espera en colas
-            - tiempos de viajes
-        """
-        veh_wt = dict()          # {veh_id: tiempo_acumulado}
-        veh_initial_tt = dict()  # {veh_id: tiempo_inicio}
-        veh_tt = dict()          # {veh_id: tiempo de viaje completados}
+        veh_start_time = {}
+        veh_wait_cache = {}
+        completed_waits, completed_tts = [], []
+
+        # Suscribirse a todas las variables relevantes
+        traci.simulation.subscribe([tc.VAR_ACCUMULATED_WAITING_TIME])
 
         while traci.simulation.getMinExpectedNumber() > 0:
             traci.simulationStep()
 
-            # Sobreescribir el tiempo acumulado de los vehiculos hasta que terminan su recorrido
-            for veh_id in traci.vehicle.getIDList():
-                veh_wt[veh_id] = traci.vehicle.getAccumulatedWaitingTime(vehID=veh_id)
-            
-            # Vehiculos nuevos que entran a la simulacion
-            for veh_id in traci.simulation.getDepartedIDList():
-                veh_initial_tt[veh_id] = traci.simulation.getTime()
+            # Registrar nuevos vehículos
+            for vid in traci.simulation.getDepartedIDList():
+                veh_start_time[vid] = traci.simulation.getTime()
 
-            # Vehiculos que terminan su recorrido
-            for veh_id in traci.simulation.getArrivedIDList():
-                if veh_id in veh_initial_tt:
-                    start_time = veh_initial_tt.pop(veh_id)
-                    end_time = traci.simulation.getTime()
-                    travel_time = end_time - start_time
-                    veh_tt[veh_id] = travel_time
-        
-        return veh_wt, veh_tt
+            # Obtener datos de todas las suscripciones de golpe
+            all_data = traci.vehicle.getAllSubscriptionResults()
+            if all_data:
+                for vid, vars_dict in all_data.items():
+                    wt = vars_dict.get(tc.VAR_ACCUMULATED_WAITING_TIME, 0.0)
+                    veh_wait_cache[vid] = wt
 
+            # Vehículos que completaron su viaje
+            for vid in traci.simulation.getArrivedIDList():
+                if vid in veh_start_time:
+                    start = veh_start_time.pop(vid)
+                    travel_time = traci.simulation.getTime() - start
+                    completed_tts.append(travel_time)
+                wt = veh_wait_cache.pop(vid, None)
+                if wt is not None:
+                    completed_waits.append(wt)
+
+        return completed_waits, completed_tts 
+    
 
     def build_genome(self, tl_ids):
         genome = []
@@ -161,4 +160,8 @@ class Controller:
         """
         Cerrar la sesion
         """
-        traci.close()
+        try:
+            traci.close()
+        except Exception as e:
+            raise ConnectionError(f"Error al cerrar conexion con SUMO: {e}")
+        

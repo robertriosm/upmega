@@ -8,6 +8,8 @@ from controller import Controller
 
 if __name__ == '__main__':
     con = Controller(config='map.sumo.cfg')
-    sga = TlSga(controller = con, generations=5, solutions_per_population=8, population=8)
+    con.start_sumo_conn()
+    con.save_state()
+    sga = TlSga(controller = con, generations=2, population=4, mating_pool_size=2)
     sga.execute(filename="genetic")
     sga.controller.close_sumo_conn()
