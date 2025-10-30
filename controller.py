@@ -2,18 +2,22 @@
 clase dedicada a la interaccion con SUMO y comunicacion con el algoritmo 
 """
 
-import traci
-import traci.constants as tc
-import os
+import traci, os, time
+import xml.etree.ElementTree as ET
 
 
 class Controller:
     def __init__(self, 
                  config = "map.sumo.cfg", 
+                 network = "test.net.xml",
+                 routes = "map.rou.xml",
                  port = 8813) -> None:
-        self.CONFIG = config # .sumocfg or .sumo.cfg
+        self.CONFIG = config # .sumocfg | .sumo.cfg
         self.PORT = port
+        self.NETWORK = network
+        self.ROUTES = routes
         self.SUMO_BINARY = self.get_sumo_binary()
+
 
     def save_state(self):
         """
@@ -28,7 +32,7 @@ class Controller:
         """
         guardar el estado final de la network con la solucion hallada
         """
-        traci.simulation.saveState(f"{filename}.state.xml")
+        traci.simulation.saveState(f"{filename}.xml")
 
 
     def get_sumo_binary(self):
@@ -45,9 +49,9 @@ class Controller:
         if not os.path.exists(self.CONFIG):
             raise FileNotFoundError(f"SUMO config no existe: {self.CONFIG}")
         
-        cmd = [self.SUMO_BINARY, "-c", self.CONFIG, "--start"] 
+        cmd = [self.SUMO_BINARY, "-c", self.CONFIG] 
         if superfast: 
-            cmd += ["--no-warnings", "true"] # "--no-step-log", "true",
+            cmd += ["--no-warnings", "true", "--no-step-log", "true"] 
 
         try:
             traci.start(cmd, port=self.PORT) 
@@ -58,10 +62,18 @@ class Controller:
     def reset(self):
         """
         sirve para resetear la simulacion 
-        Se optimizo respecto a traci.load para mejorar la 
-        velocidad de ejecucion y reducir complejidad computacional
+        mejora la velocidad de ejecucion y reduce complejidad computacional
         """
-        traci.load(['sumo', '-c', 'map.sumo.cfg', '--tripinfo-output', 'new_tripinfo.xml']) 
+        traci.load(["-n", self.NETWORK, "-r", self.ROUTES]) 
+        time.sleep(0.01)
+    
+
+    def reload(self, idx):
+        """
+        llamar a ejecucion con nuevo archivo para guardar datos.
+        Este metodo necesita del folder 'data/' para funcionar.
+        """
+        traci.load(["-n", self.NETWORK, "-r", self.ROUTES, "--tripinfo-output", f"data/{idx}.xml"])
 
 
     def logic(self, logic, new_phases):
@@ -109,39 +121,30 @@ class Controller:
         return traci.trafficlight.getIDList()
 
 
-    def execute_simulation(self):
-        veh_start_time = {}
-        veh_wait_cache = {}
-        completed_waits, completed_tts = [], []
+    def execute_simulation(self, solution_idx):
+        """
+        abre un archivo, ejecuta la simulacion, guarda la simulacion 
+        en el archivo, luego colecta los datos del archivo en forma de lista
+        """
+        with open(f"data/{solution_idx}.xml", encoding="utf-8", mode="w+t") as f:
+            
+            self.reload(solution_idx)
 
-        # Suscribirse a todas las variables relevantes
-        traci.simulation.subscribe([tc.VAR_ACCUMULATED_WAITING_TIME])
+            while traci.simulation.getMinExpectedNumber() > 0:
+                traci.simulationStep()
+            
+            self.reset()
 
-        while traci.simulation.getMinExpectedNumber() > 0:
-            traci.simulationStep()
+            tree = ET.fromstring(f.read())
 
-            # Registrar nuevos vehículos
-            for vid in traci.simulation.getDepartedIDList():
-                veh_start_time[vid] = traci.simulation.getTime()
+            durations = []
+            waiting_times = []
 
-            # Obtener datos de todas las suscripciones de golpe
-            all_data = traci.vehicle.getAllSubscriptionResults()
-            if all_data:
-                for vid, vars_dict in all_data.items():
-                    wt = vars_dict.get(tc.VAR_ACCUMULATED_WAITING_TIME, 0.0)
-                    veh_wait_cache[vid] = wt
-
-            # Vehículos que completaron su viaje
-            for vid in traci.simulation.getArrivedIDList():
-                if vid in veh_start_time:
-                    start = veh_start_time.pop(vid)
-                    travel_time = traci.simulation.getTime() - start
-                    completed_tts.append(travel_time)
-                wt = veh_wait_cache.pop(vid, None)
-                if wt is not None:
-                    completed_waits.append(wt)
-
-        return completed_waits, completed_tts 
+            for item in tree.findall("tripinfo"):
+                durations.append(item.get("duration"))
+                waiting_times.append(item.get("waitingTime"))
+            
+            return durations, waiting_times
     
 
     def build_genome(self, tl_ids):
