@@ -10,9 +10,9 @@ from controller import Controller
 class TlSga:
     def __init__(self, 
                  controller: Controller,
-                 population = 5,
-                 generations = 500,
-                 mating_pool_size = 7,
+                 population = 20,
+                 generations = 300,
+                 mating_pool_size = 8,
                  crossover_type = "single_point",
                  mutation_type = "random",
                  selection_type = "sss",
@@ -37,6 +37,7 @@ class TlSga:
         self.selection_type = selection_type
         self.mutation_probability = mutation_probability
         self.last_fitness = 0
+        self.sid = 0
 
 
     def _setup_controller(self, controller): 
@@ -45,14 +46,14 @@ class TlSga:
         """
         if not isinstance(controller, Controller):
             raise TypeError(
-                f"controller debe ser una instancia de Controller, pero se recibió {type(controller).__name__}"
+                f"controller debe ser una instancia de Controller, se recibió {type(controller).__name__}"
             )
         self.controller = controller
     
 
     def _setup_ga(self):
         """
-        inicializar GA
+        inicializar y configurar el GA
         """
 
         def fitness(solution, tls_ids, offsets):
@@ -60,11 +61,12 @@ class TlSga:
             F = w1T1 + w2T2 
             donde: w1, w2 son los pesos y T1, T2 son tiempo en cola y tiempo de viaje
             """
-            self.apply_solution(solution, tls_ids, offsets)
-            veh_wt, veh_tt = self.controller.execute_simulation()
+            net_path = self.controller.apply_solution(solution, self.sid, tls_ids, offsets)
+            durations, waiting_times = self.controller.execute_simulation(self.sid, net_path)
+            self.sid += 1 # aumentar como id unico
 
-            T1 = self.calc_avg(veh_wt)
-            T2 = self.calc_avg(veh_tt)
+            T1 = np.mean(np.array(durations, dtype=np.float16))
+            T2 = np.mean(np.array(waiting_times, dtype=np.float16))
             w1 = 1
             w2 = 1
 
@@ -73,11 +75,12 @@ class TlSga:
 
             return fitness 
         
-        tl_ids = self.get_tls_ids()
-        base_genome, phase_counts = self.controller.build_genome(tl_ids)
-        offsets = np.cumsum([0] + phase_counts)
 
-        fitness_func = lambda ga_instance, solution, solution_idx: fitness(solution, tl_ids, offsets)
+        base_genome, phase_counts = self.controller.build_genome()
+        offsets = np.cumsum([0] + phase_counts)
+        tls_ids = self.controller.get_tl_ids() # garantizar que siempre se pasa la misma lista 
+
+        fitness_func = lambda ga_instance, solution, solution_idx: fitness(solution, tls_ids, offsets)
         
         self.ga_instance = ga.GA(num_generations=self.generations,
                                  num_parents_mating=self.mating_pool_size, 
@@ -91,47 +94,6 @@ class TlSga:
                                  save_best_solutions=True)
 
 
-    def get_tls_ids(self):
-        """
-        retorna una lista con los ids de los semaforos
-        """
-        return self.controller.get_tl_ids()
-    
-
-    def calc_avg(self, data):
-        """
-        obtener el promedio de una lista
-        """
-        if data is None:
-            return 0.0
-        if len(data) == 0:
-            return 0.0
-        return float(np.mean(data))
-
-
-    def apply_solution(self, solution, tls_ids, offsets): 
-        """
-        aplicar configuracion de semaforos encontrada por algoritmo a la network 
-        """
-        if len(solution) < (offsets[-1]):
-            raise ValueError("Solution length does not match expected number of genes.")
-        
-        self.controller.reset()
-
-        for i, tl_id in enumerate(tls_ids): 
-            start, end = offsets[i], offsets[i+1] 
-            durations = solution[start:end] 
-
-            logic = self.controller.get_tl_logic(tl_id)
-            new_phases = []
-
-            for j, phase in enumerate(logic.phases):
-                new_phases.append(self.controller.phase(phase, durations[j]))
-
-            new_logic = self.controller.logic(logic, new_phases)
-            self.controller.set_tl_logic(tl_id, new_logic)
-
-
     def execute(self, filename):
         """
         correr el GA con la configuracion cargada, mostrar y guardar resultados
@@ -140,4 +102,3 @@ class TlSga:
         self.ga_instance.save(filename)
         self.controller.save_solution()
         self.ga_instance.plot_fitness()
-

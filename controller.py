@@ -2,7 +2,7 @@
 clase dedicada a la interaccion con SUMO y comunicacion con el algoritmo 
 """
 
-import traci, os, time
+import traci, os, time, sumolib
 import xml.etree.ElementTree as ET
 
 
@@ -68,12 +68,14 @@ class Controller:
         time.sleep(0.01)
     
 
-    def reload(self, idx):
+    def reload(self, idx, logic):
         """
         llamar a ejecucion con nuevo archivo para guardar datos.
-        Este metodo necesita del folder 'data/' para funcionar.
+        Este metodo necesita de: 'data/' y 'logics/' para funcionar.
+        en data guarda resultados
+        en logics obtiene la solucion 
         """
-        traci.load(["-n", self.NETWORK, "-r", self.ROUTES, "--tripinfo-output", f"data/{idx}.xml"])
+        traci.load(["-n", "test.net.xml", "-r", self.ROUTES, "-a", f"logics/{logic}.add.xml", "--tripinfo-output", f"data/{idx}.xml"])
 
 
     def logic(self, logic, new_phases):
@@ -121,14 +123,14 @@ class Controller:
         return traci.trafficlight.getIDList()
 
 
-    def execute_simulation(self, solution_idx):
+    def execute_simulation(self, solution_idx, net_path):
         """
         abre un archivo, ejecuta la simulacion, guarda la simulacion 
         en el archivo, luego colecta los datos del archivo en forma de lista
         """
         with open(f"data/{solution_idx}.xml", encoding="utf-8", mode="w+t") as f:
             
-            self.reload(solution_idx)
+            self.reload(f.name, net_path)
 
             while traci.simulation.getMinExpectedNumber() > 0:
                 traci.simulationStep()
@@ -147,10 +149,64 @@ class Controller:
             return durations, waiting_times
     
 
-    def build_genome(self, tl_ids):
+    def apply_solution(self, solution, solution_idx, tls_ids, offsets):
+        """
+        Aplica una configuración y genera un archivo para SUMO.
+
+        - solution: vector de genes (duraciones)
+        - solution_idx: id para escribir los archivos
+        - tls_ids: lista con los IDs de los semáforos
+        - offsets: lista de índices de inicio/fin de cada semáforo (len = len(tls_ids)+1)
+        """
+
+        if len(solution) != offsets[-1]:
+            raise ValueError("Solution length does not match expected number of genes.")
+
+        root = ET.Element("additional")
+
+        for i, tl_id in enumerate(tls_ids):
+            # utilizar los indices en los offsets para mapear las duraciones de las fases
+            start, end = offsets[i], offsets[i + 1]
+            durations = solution[start:end]
+
+            logic = self.get_tl_logic(tl_id)
+
+            # crear nuevas fases con las duraciones
+            new_phases = [
+                self.phase(logic.phases[j], durations[j])
+                for j in range(len(logic.phases))
+            ]
+
+            new_logic = self.logic(logic, new_phases)
+
+            tl_elem = ET.SubElement(root, "tlLogic", {
+                "id": tl_id,
+                "type": getattr(new_logic, "type", "static"),
+                "programID": getattr(new_logic, "programID", "0"),
+                "offset": str(getattr(new_logic, "offset", "0"))
+            })
+
+            for phase in new_logic.phases:
+                ET.SubElement(tl_elem, "phase", {
+                    "duration": str(phase.duration),
+                    "state": phase.state
+                })
+
+        tree = ET.ElementTree(root)
+        tree.write(f"logics/{solution_idx}.add.xml", encoding="utf-8", xml_declaration=True)
+
+        return str(solution_idx)
+    
+
+    def build_genome(self):
+        """
+        recorre los ids de los semaforos para guardar en una lista los tiempos 
+        de fases, esto es el genoma, tambien cuenta la cantidad 
+        de fases de un semaforo para asociar fases con semaforos
+        """
         genome = []
         phase_counts = []
-        for tl_id in tl_ids:
+        for tl_id in self.get_tl_ids():
             logic = traci.trafficlight.getAllProgramLogics(tl_id)[0]
             phase_counts.append(len(logic.phases))
             for phase in logic.phases:

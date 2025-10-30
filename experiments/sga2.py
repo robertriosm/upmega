@@ -25,10 +25,11 @@ def fitness(ga_instance, solution, solution_idx):
     output = numpy.sum(solution*function_inputs)
     fitness = 1.0 / numpy.abs(output - desired_output)
 
-    print(output)
-    print(solution)
-    print(function_inputs)
-    print(fitness)
+    # print(output)
+    # print(solution)
+    # print(function_inputs)
+    # print(fitness)
+    print("solution_idx:", solution_idx)
 
     return fitness
 
@@ -41,21 +42,22 @@ num_parents_mating = 7 # Number of solutions to be selected as parents in the ma
 sol_per_pop = 50 # Number of solutions in the population.
 num_genes = len(function_inputs)
 
-last_fitness = 0
-def callback_generation(ga_instance: pygad.GA):
-    global last_fitness
-    print(f"Generation = {ga_instance.generations_completed}")
-    print(f"Fitness    = {ga_instance.best_solution()[1]}")
-    print(f"Change     = {ga_instance.best_solution()[1] - last_fitness}")
-    last_fitness = ga_instance.best_solution()[1]
+# last_fitness = 0
+# def callback_generation(ga_instance: pygad.GA):
+#     global last_fitness
+#     print(ga_instance.get)
+    # print(f"Generation = {ga_instance.generations_completed}")
+    # print(f"Fitness    = {ga_instance.best_solution()[1]}")
+    # print(f"Change     = {ga_instance.best_solution()[1] - last_fitness}")
+    # last_fitness = ga_instance.best_solution()[1]
 
 # Creating an instance of the GA class inside the ga module. Some parameters are initialized within the constructor.
 ga_instance = pygad.GA(num_generations=num_generations,
                        num_parents_mating=num_parents_mating, 
                        fitness_func=fitness,
                        sol_per_pop=sol_per_pop, 
-                       num_genes=num_genes,
-                       on_generation=callback_generation)
+                       num_genes=num_genes) #,
+                    #    on_generation=callback_generation)
 
 # Running the GA to optimize the parameters of the function.
 ga_instance.run()
