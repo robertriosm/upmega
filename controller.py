@@ -9,8 +9,7 @@ import os
 
 class Controller:
     def __init__(self, 
-                 config = "./map.sumo.cfg", 
-                 use_ui = False, 
+                 config = "map.sumo.cfg", 
                  port = 8813) -> None:
         self.CONFIG = config # .sumocfg or .sumo.cfg
         self.PORT = port

@@ -73,7 +73,7 @@ class TlSga:
 
             return fitness 
         
-        tl_ids = self.get_tl_ids()
+        tl_ids = self.get_tls_ids()
         base_genome, phase_counts = self.controller.build_genome(tl_ids)
         offsets = np.cumsum([0] + phase_counts)
 
@@ -91,7 +91,7 @@ class TlSga:
                                  save_best_solutions=True)
 
 
-    def get_tl_ids(self):
+    def get_tls_ids(self):
         """
         retorna una lista con los ids de los semaforos
         """
@@ -104,13 +104,9 @@ class TlSga:
         """
         if data is None:
             return 0.0
-        if isinstance(data, dict):
-            vals = list(data.values())
-        else:
-            vals = list(data)
-        if len(vals) == 0:
+        if len(data) == 0:
             return 0.0
-        return float(np.mean(vals))
+        return float(np.mean(data))
 
 
     def apply_solution(self, solution, tls_ids, offsets): 
@@ -120,12 +116,6 @@ class TlSga:
         if len(solution) < (offsets[-1]):
             raise ValueError("Solution length does not match expected number of genes.")
         
-        # sanitizar valores 
-        # for j, phase in enumerate(logic.phases):
-        #     val = float(durations[j])
-        #     val = max(phase.minDur, min(phase.maxDur, val))
-        #     new_phases.append(self.controller.phase(phase, val))
-
         self.controller.reset()
 
         for i, tl_id in enumerate(tls_ids): 
@@ -136,7 +126,7 @@ class TlSga:
             new_phases = []
 
             for j, phase in enumerate(logic.phases):
-                new_phases.append(self.controller.phase(phase, durations[j])) # TODO FIX
+                new_phases.append(self.controller.phase(phase, durations[j]))
 
             new_logic = self.controller.logic(logic, new_phases)
             self.controller.set_tl_logic(tl_id, new_logic)

@@ -7,7 +7,7 @@ from controller import Controller
 
 
 if __name__ == '__main__':
-    con = Controller(config='map.sumo.cfg')
+    con = Controller()
     con.start_sumo_conn()
     con.save_state()
     sga = TlSga(controller = con, generations=2, population=4, mating_pool_size=2)
