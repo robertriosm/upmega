@@ -59,3 +59,54 @@ traci.close()
 
 
 """
+
+"""
+
+def apply_solution(self, solution, sid, tls_ids, offsets):
+        "
+        Aplica una configuración y genera un archivo para SUMO.
+
+        - solution: vector de genes (duraciones)
+        - sid: id para nombrar los archivos
+        - tls_ids: lista con los IDs de los semáforos
+        - offsets: lista de índices de inicio/fin de cada semáforo (len = len(tls_ids)+1)
+        "
+
+        if len(solution) != offsets[-1]:
+            raise ValueError("Solution length does not match expected number of genes.")
+
+        root = ET.Element("additional")
+
+        for i, tl_id in enumerate(tls_ids):
+            # utilizar los indices en los offsets para mapear las duraciones de las fases
+            start, end = offsets[i], offsets[i + 1]
+            durations = solution[start:end]
+
+            logic = self.get_tl_logic(tl_id)
+
+            new_phases = [
+                self.phase(logic.phases[j], durations[j])
+                for j in range(len(logic.phases))
+            ]
+
+            new_logic = self.logic(logic, new_phases)
+
+            tl_elem = ET.SubElement(root, "tlLogic", {
+                "id": str(tl_id),
+                "type": str(new_logic.type),
+                "programID": str(new_logic.programID),
+                "offset": "0"
+            })
+            
+            for phase in new_logic.phases:
+                ET.SubElement(tl_elem, "phase", {
+                    "duration": str(phase.duration),
+                    "state": str(phase.state)
+                })
+
+        tree = ET.ElementTree(root)
+        ET.indent(tree, space="\t")
+        tree.write(f"logics/{str(sid)}.add.xml", encoding="utf-8", xml_declaration=True)
+
+
+"""
