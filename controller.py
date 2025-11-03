@@ -51,11 +51,7 @@ class Controller:
         if not os.path.exists(self.CONFIG):
             raise FileNotFoundError(f"SUMO config no existe: {self.CONFIG}")
         
-        cmd = [self.SUMO_BINARY, "-c", self.CONFIG] 
-        if noSteps: 
-            cmd += ["--no-step-log", "true"] 
-        if noWarns:
-            cmd += ["--no-warnings", "true"]
+        cmd = [self.SUMO_BINARY, "-c", self.CONFIG, "--no-step-log", "true", "--no-warnings", "true"] 
 
         try:
             traci.start(cmd, port=self.PORT) 
@@ -68,7 +64,8 @@ class Controller:
         sirve para resetear la simulacion 
         mejora la velocidad de ejecucion y reduce complejidad computacional
         """
-        traci.load(["-n", self.NETWORK, "-r", self.ROUTES]) 
+        traci.load(["-n", self.NETWORK, "-r", self.ROUTES, 
+                    "--no-step-log", "true", "--no-warnings", "true"]) 
         time.sleep(0.01)
     
 
@@ -80,7 +77,8 @@ class Controller:
         - outputs guarda resultados de simulacion
         """
         traci.load(["-n", f"logics/{sid}.net.xml", "-r", self.ROUTES, 
-                    "--tripinfo-output", f"outputs/{sid}.xml"])
+                    "--tripinfo-output", f"outputs/{sid}.xml",
+                    "--no-step-log", "true", "--no-warnings", "true"])
 
 
     def logic(self, logic, new_phases):

@@ -37,9 +37,8 @@ class TlSga:
         self.selection_type = selection_type
         self.mutation_probability = mutation_probability
         self.gene_type = int
-        self.gene_space = range(3, 70)
-        self.last_fitness = 0
         self.sid = 0
+        self.stop_criteria = "saturate_5"
 
 
     def _setup_controller(self, controller): 
@@ -67,8 +66,8 @@ class TlSga:
             durations, waiting_times = self.controller.execute_simulation(self.sid)
             self.sid += 1 # aumentar como id unico
 
-            w1 = 1
-            w2 = 1
+            w1 = 0.9
+            w2 = 1.1
 
             T1 = np.array(durations, dtype=np.float32)
             T2 = np.array(waiting_times, dtype=np.float32)
@@ -76,19 +75,46 @@ class TlSga:
             T1_mean = np.mean(T1)
             T2_mean = np.mean(T2)
 
-            print("T1_mean: ", T1_mean)
-            print("T2_mean: ", T2_mean)
-
-            F = w1 * T1_mean + w2 * T2_mean 
-
-            print("fitness: ", F)
+            F = 1 / (w1 * T1_mean + w2 * T2_mean + 1e-6) 
 
             return F
-        
+    
+
+        def build_gene_space(tls_ids):
+            """
+            genera un espacio donde los genes pueden mutar con restricciones al amarillo
+            """
+            gene_space = []
+
+            for tl in tls_ids:
+                logic = self.controller.get_tl_logic(tl)
+                
+                for phase in logic.phases:
+                    state = phase.state
+
+                    # Clasificacion de fase
+                    if 'y' in state.lower():  # contiene amarillo
+                        gene_space.append({'low': 3, 'high': 6})
+                    else:  # verdes u otras combinaciones
+                        gene_space.append({'low': 7, 'high': 80})
+
+            return gene_space
+
+
+        def on_gen_callback(ga_instance):
+            """
+            feedback del mejor fitness en la generacion
+            """
+            gen = ga_instance.generations_completed
+            fit = ga_instance.best_solution(pop_fitness=ga_instance.last_generation_fitness)[1]
+            print(f"Generation {gen} completed. Best fitness in this generation: {fit}")
+    
 
         base_genome, phase_counts = self.controller.build_genome()
         offsets = np.cumsum([0] + phase_counts) # garantizar la misma lista
         tls_ids = self.controller.get_tl_ids() # garantizar la misma lista 
+        self.gene_space = build_gene_space(tls_ids)
+        print(self.gene_space)
 
         fitness_func = lambda ga_instance, solution, solution_idx: fitness(solution, tls_ids, offsets)
         
@@ -102,7 +128,9 @@ class TlSga:
                                  mutation_type=self.mutation_type,
                                  mutation_probability=self.mutation_probability,
                                  gene_space=self.gene_space,
-                                 gene_type=self.gene_type)
+                                 gene_type=self.gene_type,
+                                 stop_criteria=self.stop_criteria,
+                                 on_generation=on_gen_callback)
 
 
     def execute(self, filename):
@@ -111,5 +139,4 @@ class TlSga:
         """
         self.ga_instance.run()
         self.ga_instance.save(filename)
-        self.controller.save_solution()
         self.ga_instance.plot_fitness()
