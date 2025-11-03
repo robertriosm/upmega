@@ -123,28 +123,37 @@ class Controller:
 
     def execute_simulation(self, sid):
         """
-        abre un archivo, ejecuta la simulacion, guarda la simulacion 
-        en el archivo, luego colecta los datos del archivo en forma de lista
+        Ejecuta la simulación y lee los resultados desde tripinfo-output.
         """
-        with open(f"outputs/{sid}.xml", encoding="utf-8", mode="w+t") as f:
-            
-            self.reload(sid)
+        output_path = f"outputs/{sid}.xml"
 
-            while traci.simulation.getMinExpectedNumber() > 0:
-                traci.simulationStep()
-            
-            self.reset()
+        # Ejecutar simulación con salida de tripinfos
+        self.reload(sid)
+        while traci.simulation.getMinExpectedNumber() > 0:
+            traci.simulationStep()
+        self.reset()
 
-            tree = ET.fromstring(f.read())
+        # Esperar brevemente a que SUMO termine de escribir el archivo
+        time.sleep(0.05)
 
-            durations = []
-            waiting_times = []
+        # Leer el archivo generado por SUMO
+        if not os.path.exists(output_path):
+            raise FileNotFoundError(f"No se generó el archivo {output_path}")
 
-            for item in tree.findall("tripinfo"):
-                durations.append(item.get("duration"))
-                waiting_times.append(item.get("waitingTime"))
-            
-            return durations, waiting_times
+        with open(output_path, "r", encoding="utf-8") as f:
+            content = f.read().strip()
+            if not content:
+                raise ValueError(f"El archivo {output_path} está vacío.")
+            tree = ET.fromstring(content)
+
+        durations = []
+        waiting_times = []
+        for item in tree.findall("tripinfo"):
+            durations.append(float(item.get("duration", 0)))
+            waiting_times.append(float(item.get("waitingTime", 0)))
+
+        return durations, waiting_times
+
     
 
     def apply_solution(self, solution, sid, tls_ids, offsets):
