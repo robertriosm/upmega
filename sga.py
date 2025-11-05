@@ -114,7 +114,6 @@ class TlSga:
         offsets = np.cumsum([0] + phase_counts) # garantizar la misma lista
         tls_ids = self.controller.get_tl_ids() # garantizar la misma lista 
         self.gene_space = build_gene_space(tls_ids)
-        print(self.gene_space)
 
         fitness_func = lambda ga_instance, solution, solution_idx: fitness(solution, tls_ids, offsets)
         
