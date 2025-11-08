@@ -2,7 +2,7 @@
 clase dedicada a la interaccion con SUMO y comunicacion con el algoritmo 
 """
 
-import traci, os, time, sumolib
+import traci, os, time
 import xml.etree.ElementTree as ET
 
 
