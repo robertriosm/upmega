@@ -16,16 +16,18 @@ class TlSga:
                  crossover_type = "single_point",
                  mutation_type = "random",
                  selection_type = "sss",
-                 mutation_probability = 0.1
+                 mutation_probability = 0.1,
+                 saturation = "saturate_10"
                  ) -> None:
         self._setup_controller(controller) 
         self._setup_config(population, generations, crossover_type, 
-                           mutation_type, mating_pool_size, selection_type, mutation_probability)
+                           mutation_type, mating_pool_size, selection_type, 
+                           mutation_probability, saturation)
         self._setup_ga()
 
 
     def _setup_config(self, population, generations, crossover_type, 
-                      mutation_type, mating_pool_size, selection_type, mutation_probability): 
+                      mutation_type, mating_pool_size, selection_type, mutation_probability, saturation): 
         """
         inicializar parametros del GA
         """
@@ -38,7 +40,7 @@ class TlSga:
         self.mutation_probability = mutation_probability
         self.gene_type = int
         self.sid = 0
-        self.stop_criteria = "saturate_5"
+        self.stop_criteria = saturation
 
 
     def _setup_controller(self, controller): 
@@ -66,9 +68,10 @@ class TlSga:
             durations, waiting_times = self.controller.execute_simulation(self.sid)
             self.sid += 1 # aumentar como id unico
 
-            w1 = 0.9
+            w1 = 1.0
             w2 = 1.1
 
+            # Sin normalizacion
             T1 = np.array(durations, dtype=np.float32)
             T2 = np.array(waiting_times, dtype=np.float32)
 
@@ -76,6 +79,18 @@ class TlSga:
             T2_mean = np.mean(T2)
 
             F = 1 / (w1 * T1_mean + w2 * T2_mean + 1e-6) 
+
+            # Con normalizacion
+            # f1 = np.array(durations, dtype=np.float32)
+            # f2 = np.array(waiting_times, dtype=np.float32)
+
+            # f1_norm = (f1 - f1.min()) / (f1.max() - f1.min())
+            # f2_norm = (f2 - f2.min()) / (f2.max() - f2.min())
+
+            # f1_norm_mean = np.mean(f1_norm)
+            # f2_norm_mean = np.mean(f2_norm)
+
+            # F = w1 * f1_norm_mean + w2 * f2_norm_mean
 
             return F
     
