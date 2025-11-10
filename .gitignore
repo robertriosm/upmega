@@ -1,6 +1,12 @@
 # internal files
 history/
 history/*
+logics/
+logics/*
+outputs/
+outputs/*
+*.pkl
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

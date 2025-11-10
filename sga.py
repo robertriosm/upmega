@@ -17,17 +17,19 @@ class TlSga:
                  mutation_type = "random",
                  selection_type = "sss",
                  mutation_probability = 0.1,
-                 saturation = "saturate_10"
+                 saturation = "saturate_10",
+                 get_initial_population = False
                  ) -> None:
         self._setup_controller(controller) 
         self._setup_config(population, generations, crossover_type, 
                            mutation_type, mating_pool_size, selection_type, 
-                           mutation_probability, saturation)
+                           mutation_probability, saturation, get_initial_population)
         self._setup_ga()
 
 
     def _setup_config(self, population, generations, crossover_type, 
-                      mutation_type, mating_pool_size, selection_type, mutation_probability, saturation): 
+                      mutation_type, mating_pool_size, selection_type, mutation_probability, 
+                      saturation, get_initial_population): 
         """
         inicializar parametros del GA
         """
@@ -41,6 +43,7 @@ class TlSga:
         self.gene_type = int
         self.sid = 0
         self.stop_criteria = saturation
+        self.get_initial_population = get_initial_population
 
 
     def _setup_controller(self, controller): 
@@ -108,10 +111,13 @@ class TlSga:
                     state = phase.state
 
                     # Clasificacion de fase
-                    if 'y' in state.lower():  # contiene amarillo
+                    if 'y' in state:  # contiene amarillo
                         gene_space.append({'low': 3, 'high': 6})
-                    else:  # verdes u otras combinaciones
-                        gene_space.append({'low': 7, 'high': 80})
+                    else: # verdes u otras combinaciones
+                        if 'G' in state:
+                            gene_space.append({'low': 7, 'high': 80}) # verde
+                        else:
+                            gene_space.append({'low': 7, 'high': 50}) # rojo
 
             return gene_space
 
@@ -123,6 +129,16 @@ class TlSga:
             gen = ga_instance.generations_completed
             fit = ga_instance.best_solution(pop_fitness=ga_instance.last_generation_fitness)[1]
             print(f"Generation {gen} completed. Best fitness in this generation: {fit}")
+        
+
+        def gen_initial_pop(base):
+            initial_pop = [base]
+
+            for _ in range(self.population - 1):
+                individual = [np.random.randint(gs["low"], gs["high"]+1) for gs in self.gene_space]
+                initial_pop.append(individual)
+
+            return initial_pop
     
 
         base_genome, phase_counts = self.controller.build_genome()
@@ -131,26 +147,50 @@ class TlSga:
         self.gene_space = build_gene_space(tls_ids)
 
         fitness_func = lambda ga_instance, solution, solution_idx: fitness(solution, tls_ids, offsets)
-        
-        self.ga_instance = ga.GA(num_generations=self.generations,
-                                 num_parents_mating=self.mating_pool_size, 
-                                 fitness_func=fitness_func,
-                                 sol_per_pop=self.population, 
-                                 num_genes=len(base_genome),
-                                 parent_selection_type=self.selection_type,
-                                 crossover_type=self.crossover_type,
-                                 mutation_type=self.mutation_type,
-                                 mutation_probability=self.mutation_probability,
-                                 gene_space=self.gene_space,
-                                 gene_type=self.gene_type,
-                                 stop_criteria=self.stop_criteria,
-                                 on_generation=on_gen_callback)
+
+        if self.get_initial_population:
+            initial_pop = gen_initial_pop(base_genome)
+            self.ga_instance = ga.GA(num_generations=self.generations,
+                                    num_parents_mating=self.mating_pool_size, 
+                                    fitness_func=fitness_func,
+                                    sol_per_pop=self.population, 
+                                    num_genes=len(base_genome),
+                                    parent_selection_type=self.selection_type,
+                                    crossover_type=self.crossover_type,
+                                    mutation_type=self.mutation_type,
+                                    mutation_probability=self.mutation_probability,
+                                    gene_space=self.gene_space,
+                                    gene_type=self.gene_type,
+                                    stop_criteria=self.stop_criteria,
+                                    on_generation=on_gen_callback,
+                                    initial_population=initial_pop)
+        else:
+            self.ga_instance = ga.GA(num_generations=self.generations,
+                                num_parents_mating=self.mating_pool_size, 
+                                fitness_func=fitness_func,
+                                sol_per_pop=self.population, 
+                                num_genes=len(base_genome),
+                                parent_selection_type=self.selection_type,
+                                crossover_type=self.crossover_type,
+                                mutation_type=self.mutation_type,
+                                mutation_probability=self.mutation_probability,
+                                gene_space=self.gene_space,
+                                gene_type=self.gene_type,
+                                stop_criteria=self.stop_criteria,
+                                on_generation=on_gen_callback)
 
 
     def execute(self, filename):
         """
         correr el GA con la configuracion cargada, mostrar y guardar resultados
         """
+        if filename == "auto":
+            st = self.selection_type[:3]
+            ct = self.crossover_type[:3]
+            P = int(self.mutation_probability*100)
+            inip = "inipop" if self.get_initial_population else ""
+            filename = f"g{self.generations}p{self.population}m{self.mating_pool_size}{st}{ct}P{P}{inip}"
+        
         self.ga_instance.run()
         self.ga_instance.save(filename)
         self.ga_instance.plot_fitness()
