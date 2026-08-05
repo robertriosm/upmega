@@ -15,8 +15,7 @@ if __name__ == '__main__':
                 mating_pool_size=4,
                 selection_type="tournament",
                 crossover_type="uniform",
-                mutation_probability=0.15,
-                get_initial_population=True)
+                mutation_probability=0.15)
     sga.execute(filename="auto")
     sga.controller.close_sumo_conn()
  
