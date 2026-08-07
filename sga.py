@@ -20,22 +20,41 @@ class TlSga:
                  mutation_type = "random",
                  selection_type = "sss",
                  mutation_probability = 0.1,
-                 saturation = "saturate_10",
+                 saturation = None,
+                 k_tournament = 3,
                  random_seed = None,
                  w1 = 1.0,
                  w2 = 1.1
                  ) -> None:
         self._setup_controller(controller)
-        self._setup_config(population, generations, crossover_type,
-                           mutation_type, mating_pool_size, selection_type,
-                           mutation_probability, saturation,
-                           random_seed, w1, w2)
+        self._setup_config(population, 
+                           generations, 
+                           crossover_type,
+                           mutation_type, 
+                           mating_pool_size, 
+                           selection_type,
+                           mutation_probability,
+                           saturation,
+                           k_tournament,
+                           random_seed,
+                           w1,
+                           w2)
         self._setup_ga()
 
 
-    def _setup_config(self, population, generations, crossover_type,
-                      mutation_type, mating_pool_size, selection_type, mutation_probability,
-                      saturation, random_seed, w1, w2):
+    def _setup_config(self, 
+                      population, 
+                      generations, 
+                      crossover_type,
+                      mutation_type, 
+                      mating_pool_size, 
+                      selection_type, 
+                      mutation_probability,
+                      saturation,
+                      k_tournament,
+                      random_seed,
+                      w1,
+                      w2):
         """
         inicializar parametros del GA
         """
@@ -48,7 +67,15 @@ class TlSga:
         self.mutation_probability = mutation_probability
         self.gene_type = int
         self.sid = 0
+        # None = sin paro anticipado, la corrida agota las generaciones.
+        # Es el default porque saturate_K corta la busqueda en la primera meseta
+        # de K generaciones, y aqui la busqueda avanza en escalera: dos corridas
+        # seguidas se detuvieron justo en la generacion en que rompian la meseta
         self.stop_criteria = saturation
+        # tamano del torneo: cuantos individuos compiten por cada plaza de padre.
+        # Con K bajo y pocos padres el mejor individuo puede pasar generaciones
+        # enteras sin reproducirse, aunque sobreviva como elite
+        self.k_tournament = k_tournament
         self.random_seed = random_seed
         # los pesos viven aqui y no dentro de la funcion de fitness para poder
         # registrarlos: son parte de la definicion del problema, no un detalle
@@ -104,64 +131,41 @@ class TlSga:
                 "waiting_mean": round(float(T2_mean), 3),
                 "time_loss": stats.get("timeLoss"),
                 "speed": stats.get("speed"),
-                "teleports": stats.get("teleports"),
+                "sin_llegar": stats.get("sin_llegar"),
+                "trabada": stats.get("trabada"),
+                "pasos": stats.get("pasos"),
                 "vehicles": stats.get("count"),
             })
-
-            # Con normalizacion
-            # f1 = np.array(durations, dtype=np.float32)
-            # f2 = np.array(waiting_times, dtype=np.float32)
-
-            # f1_norm = (f1 - f1.min()) / (f1.max() - f1.min())
-            # f2_norm = (f2 - f2.min()) / (f2.max() - f2.min())
-
-            # f1_norm_mean = np.mean(f1_norm)
-            # f2_norm_mean = np.mean(f2_norm)
-
-            # F = w1 * f1_norm_mean + w2 * f2_norm_mean
 
             return F
     
 
         def build_gene_space(tls_ids):
             """
-            un rango por gen, derivado de criterios de ingenieria de transito.
+            un rango por gen, en los tres tramos del genoma.
 
-            - AMBAR: no es variable de decision. Su duracion la determina la
-              velocidad de aproximacion (t_reaccion + v/2a), no el trafico, asi
-              que se fija en su valor original. Son 166 de 386 fases que salen
-              del espacio de busqueda y que ademas ya no se pueden volver
-              inseguras.
-            - TODO-ROJO: tiempo de despeje del cruce, [3,30).
-            - VERDE: minimo de seguridad 7s, maximo 90s. Contiene los 39-82s
-              que asigna netconvert y permite bajar lo suficiente para alcanzar
-              los ciclos de 20-30s que da la formula de Webster con esta demanda.
+            - CICLO: de su minimo fisico (ambares + minimos de cada fase) hasta
+              120s. La cota de arriba es el ciclo maximo que se considera
+              aceptable en la practica; la de abajo garantiza que el plan que
+              salga siempre sea seguro, pase lo que pase con los pesos.
+            - PESOS: proporciones de reparto, [1,100). No son segundos, asi que
+              el rango es el mismo para todos y no hace falta ajustarlo a mano.
             - OFFSET: desfase del inicio del ciclo, en porcentaje [0,100).
 
-            Todos los valores por defecto de netconvert caen dentro de su rango:
-            el punto de partida es factible, que es el objetivo de este diseno.
+            El ambar no aparece: no es variable de decision, su duracion la fija
+            la velocidad de aproximacion y se copia de la red original.
             """
-            gene_space = []
+            ciclos, pesos, offsets = [], [], []
 
             for tl in tls_ids:
                 logic = self.controller.get_tl_logic(tl)
+                indices, ambar, minimos = self.controller.split_layout(logic)
 
-                for phase in logic.phases:
-                    state = phase.state
+                ciclos.append({'low': ambar + sum(minimos), 'high': 121})
+                pesos += [{'low': 1, 'high': 101} for _ in indices]
+                offsets.append({'low': 0, 'high': 100})
 
-                    # se pregunta primero por el verde: una fase con movimiento
-                    # en verde es una fase verde aunque arrastre algun ambar
-                    if 'G' in state or 'g' in state:
-                        gene_space.append({'low': 7, 'high': 90})
-                    elif 'y' in state: # transicion pura, fija por seguridad
-                        gene_space.append(int(phase.duration))
-                    else: # todo-rojo
-                        gene_space.append({'low': 3, 'high': 30})
-
-            # un offset por semaforo, al final del genoma
-            gene_space += [{'low': 0, 'high': 100} for _ in tls_ids]
-
-            return gene_space
+            return ciclos + pesos + offsets
 
 
         def on_gen_callback(ga_instance):
@@ -183,19 +187,18 @@ class TlSga:
 
             for _ in range(self.population - 1):
                 # high es exclusivo, igual que el uniform(low, high) que usa
-                # pygad al mutar. Los genes fijos (ambar) se copian tal cual
-                individual = [np.random.randint(gs["low"], gs["high"]) if isinstance(gs, dict) else gs
-                              for gs in self.gene_space]
+                # pygad al mutar
+                individual = [np.random.randint(gs["low"], gs["high"]) for gs in self.gene_space]
                 initial_pop.append(individual)
 
             return initial_pop
     
 
-        base_genome, phase_counts = self.controller.build_genome()
-        # indices de corte del tramo de duraciones, uno por semaforo.
+        base_genome, split_counts = self.controller.build_genome()
+        # indices de corte del tramo de pesos, uno por semaforo.
         # Se llama gene_slices y no offsets para no confundirlo con el offset
-        # del semaforo, que ahora es una variable de decision real
-        gene_slices = np.cumsum([0] + phase_counts)
+        # del semaforo, que es una variable de decision real
+        gene_slices = np.cumsum([0] + split_counts)
         tls_ids = self.controller.get_tl_ids() # garantizar la misma lista
         self.gene_space = build_gene_space(tls_ids)
 
@@ -209,6 +212,7 @@ class TlSga:
                                  sol_per_pop=self.population, 
                                  num_genes=len(base_genome),
                                  parent_selection_type=self.selection_type,
+                                 K_tournament=self.k_tournament,
                                  crossover_type=self.crossover_type,
                                  mutation_type=self.mutation_type,
                                  mutation_probability=self.mutation_probability,
@@ -230,7 +234,13 @@ class TlSga:
             st = self.selection_type[:3]
             ct = self.crossover_type[:3]
             P = int(self.mutation_probability*100)
-            filename = f"g{self.generations}p{self.population}m{self.mating_pool_size}{st}{ct}P{P}"
+            # la demanda va en el nombre: dos corridas con distinta cantidad de
+            # vehiculos son escenarios distintos y no deben pisarse los archivos
+            dem = self.controller.DEMAND
+            cars = f"c{dem['solicitados']}s{dem['seed']}" if dem else "cdef"
+            # solo aparece si hay paro anticipado, para no ensuciar el nombre
+            sat = f"sat{str(self.stop_criteria).split('_')[-1]}" if self.stop_criteria else ""
+            filename = f"g{self.generations}p{self.population}m{self.mating_pool_size}{st}{ct}P{P}{cars}{sat}"
         
         self.ga_instance.run()
         self.ga_instance.save(filename)
@@ -277,6 +287,7 @@ class TlSga:
                 "routes": self.controller.ROUTES,
                 "template": self.controller.TEMPLATE,
                 "sumo_seed": self.controller.SEED,
+                "demanda": self.controller.DEMAND,
             },
             "fitness": {
                 "formula": "F = 1 / (w1*duracion_media + w2*espera_media + 1e-6)",
@@ -306,7 +317,7 @@ class TlSga:
                 "poblacion_inicial": "individuo 0 = genoma por defecto de netconvert, resto aleatorio",
                 "gene_space": {
                     "genes": len(self.gene_space),
-                    "genes_fijos": sum(1 for g in self.gene_space if not isinstance(g, dict)),
+                    "layout": "[ciclo por semaforo] [pesos de reparto] [offset en % por semaforo]",
                     "rangos": sorted({(g["low"], g["high"]) for g in self.gene_space
                                       if isinstance(g, dict)}),
                 },

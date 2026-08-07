@@ -1,0 +1,148 @@
+{
+  "run": "g80p20m4touuniP2c1000s42",
+  "timestamp": "2026-08-06T03:58:23",
+  "versions": {
+    "sumo": "SUMO 1.23.1",
+    "pygad": "3.5.0",
+    "python": "3.13.5"
+  },
+  "escenario": {
+    "network": "test.net.xml",
+    "routes": "demand\\cars1000_s42.rou.xml",
+    "template": "template.net.xml",
+    "sumo_seed": 23,
+    "demanda": {
+      "solicitados": 1000,
+      "generados": 763,
+      "period": 1.0,
+      "end": 1000,
+      "seed": 42,
+      "net": "test.net.xml",
+      "archivo": "demand\\cars1000_s42.rou.xml"
+    }
+  },
+  "fitness": {
+    "formula": "F = 1 / (w1*duracion_media + w2*espera_media + 1e-6)",
+    "w1": 1.0,
+    "w2": 1.1,
+    "sentido": "maximizar",
+    "fuente": "tripinfo-output"
+  },
+  "ga": {
+    "num_generations": 80,
+    "sol_per_pop": 20,
+    "num_genes": 440,
+    "num_parents_mating": 4,
+    "parent_selection_type": "tournament",
+    "K_tournament": 3,
+    "crossover_type": "uniform",
+    "crossover_probability": null,
+    "mutation_type": "random",
+    "mutation_probability": 0.02,
+    "keep_elitism": 1,
+    "keep_parents": -1,
+    "stop_criteria": [
+      [
+        "saturate",
+        10
+      ]
+    ],
+    "random_seed": null,
+    "poblacion_inicial": "individuo 0 = genoma por defecto de netconvert, resto aleatorio",
+    "gene_space": {
+      "genes": 440,
+      "layout": "[ciclo por semaforo] [pesos de reparto] [offset en % por semaforo]",
+      "rangos": [
+        [
+          0,
+          100
+        ],
+        [
+          1,
+          101
+        ],
+        [
+          13,
+          121
+        ],
+        [
+          15,
+          121
+        ],
+        [
+          16,
+          121
+        ],
+        [
+          20,
+          121
+        ],
+        [
+          24,
+          121
+        ],
+        [
+          26,
+          121
+        ]
+      ]
+    }
+  },
+  "resultado": {
+    "generaciones_completadas": 48,
+    "detenido_por": "stop_criteria",
+    "evaluaciones": 932,
+    "mejor_fitness": 0.0046146828681230545,
+    "mejor_generacion": 48,
+    "mejor_sid": 913,
+    "red_de_la_mejor": "logics/913.net.xml"
+  },
+  "metricas": {
+    "baseline": {
+      "count": 763.0,
+      "routeLength": 1358.0,
+      "speed": 7.84,
+      "duration": 189.48,
+      "waitingTime": 71.63,
+      "timeLoss": 119.2,
+      "departDelay": 0.28,
+      "sin_llegar": 0,
+      "teleports": 0,
+      "collisions": 0
+    },
+    "mejor": {
+      "count": 763.0,
+      "routeLength": 1358.0,
+      "speed": 8.55,
+      "duration": 167.76,
+      "waitingTime": 44.49,
+      "timeLoss": 97.53,
+      "departDelay": 0.28,
+      "sin_llegar": 0,
+      "teleports": 0,
+      "collisions": 0
+    },
+    "mejora_pct": {
+      "duration": 11.46,
+      "waitingTime": 37.89,
+      "timeLoss": 18.18,
+      "departDelay": 0.0
+    }
+  },
+  "archivos": {
+    "modelo": "g80p20m4touuniP2c1000s42.pkl",
+    "evaluaciones": "g80p20m4touuniP2c1000s42.evaluations.csv",
+    "detalle_baseline": {
+      "tripinfo": "detail/g80p20m4touuniP2c1000s42.baseline.tripinfo.xml",
+      "statistic": "detail/g80p20m4touuniP2c1000s42.baseline.stats.xml",
+      "summary": "detail/g80p20m4touuniP2c1000s42.baseline.summary.xml",
+      "edgedata": "detail/g80p20m4touuniP2c1000s42.baseline.edgedata.xml"
+    },
+    "detalle_mejor": {
+      "tripinfo": "detail/g80p20m4touuniP2c1000s42.best.tripinfo.xml",
+      "statistic": "detail/g80p20m4touuniP2c1000s42.best.stats.xml",
+      "summary": "detail/g80p20m4touuniP2c1000s42.best.summary.xml",
+      "edgedata": "detail/g80p20m4touuniP2c1000s42.best.edgedata.xml"
+    }
+  }
+}

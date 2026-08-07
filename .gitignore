@@ -5,6 +5,10 @@ logics/
 logics/*
 outputs/
 outputs/*
+detail/
+detail/*
+demand/
+demand/*
 *.pkl
 
 

@@ -7,21 +7,57 @@ import xml.etree.ElementTree as ET
 
 
 class Controller:
+    # minimos de seguridad, en segundos: verde minimo para que un vehiculo
+    # detenido alcance a arrancar y cruzar, rojo minimo para despejar el cruce
+    MIN_VERDE = 7
+    MIN_ROJO = 3
+
     def __init__(self,
                  config = "map.sumo.cfg",
                  network = "test.net.xml",
                  routes = "map.rou.xml",
                  template = "template.net.xml",
                  port = 8813,
-                 seed = 23) -> None:
+                 seed = 23,
+                 demand = None,
+                 max_steps = 10000,
+                 max_quiet = 600) -> None:
         self.CONFIG = config
         self.PORT = port
         self.NETWORK = network
         self.TEMPLATE = template
         self.ROUTES = routes
         self.SEED = seed # 23 es el valor por defecto de SUMO, se fija para dejarlo registrado
+        self.DEMAND = demand # parametros con los que se genero la demanda, para el registro
+        # sin teletransportes una red trabada no se destraba sola, asi que hace
+        # falta un tope de pasos para que una mala solucion no cuelgue la corrida
+        self.MAX_STEPS = max_steps
+        self.MAX_QUIET = max_quiet # pasos seguidos sin una sola llegada = red trabada
         self.SUMO_BINARY = self.get_sumo_binary()
         self.prepare_dirs()
+
+
+    def sim_flags(self):
+        """
+        banderas comunes a toda simulacion, para que evaluaciones, baseline y
+        detalle midan exactamente bajo las mismas condiciones.
+
+        --time-to-teleport -1 desactiva los teletransportes. SUMO deja de
+        rescatar vehiculos atascados, asi que lo que se mide es lo que de
+        verdad pasaria en la calle. El precio es que una red trabada ya no se
+        destraba sola: de ahi el tope de pasos.
+
+        --tripinfo-output.write-unfinished es obligatorio junto con lo anterior.
+        Sin el, los vehiculos que quedan atascados no aparecen en el tripinfo y
+        una solucion que traba la red puntua MEJOR que una sana, porque solo se
+        promedia a los que lograron salir. Medido: una red trabada daba J=538
+        sin la bandera y J=2033 con ella.
+        """
+        return ["--time-to-teleport", "-1",
+                "--tripinfo-output.write-unfinished", "true",
+                "--tripinfo-output.write-undeparted", "true",
+                "--seed", str(self.SEED),
+                "--no-step-log", "true", "--no-warnings", "true"]
 
 
     def prepare_dirs(self):
@@ -75,9 +111,7 @@ class Controller:
         sirve para resetear la simulacion 
         mejora la velocidad de ejecucion y reduce complejidad computacional
         """
-        traci.load(["-n", self.NETWORK, "-r", self.ROUTES,
-                    "--seed", str(self.SEED),
-                    "--no-step-log", "true", "--no-warnings", "true"])
+        traci.load(["-n", self.NETWORK, "-r", self.ROUTES] + self.sim_flags())
         time.sleep(0.01)
 
 
@@ -95,9 +129,7 @@ class Controller:
         """
         traci.load(["-n", f"logics/{sid}.net.xml", "-r", self.ROUTES,
                     "--tripinfo-output", f"outputs/{sid}.xml",
-                    "--statistic-output", f"outputs/{sid}.stats.xml",
-                    "--seed", str(self.SEED),
-                    "--no-step-log", "true", "--no-warnings", "true"])
+                    "--statistic-output", f"outputs/{sid}.stats.xml"] + self.sim_flags())
 
 
     def logic(self, logic, new_phases):
@@ -146,8 +178,7 @@ class Controller:
 
         # Ejecutar simulación con salida de tripinfos
         self.reload(sid)
-        while traci.simulation.getMinExpectedNumber() > 0:
-            traci.simulationStep()
+        pasos, trabada = self.step_until_done()
         self.reset()
 
         # Esperar brevemente a que SUMO termine de escribir el archivo
@@ -165,11 +196,60 @@ class Controller:
 
         durations = []
         waiting_times = []
-        for item in tree.findall("tripinfo"):
-            durations.append(float(item.get("duration", 0)))
-            waiting_times.append(float(item.get("waitingTime", 0)))
+        sin_terminar = 0
 
-        return durations, waiting_times, self.read_statistics(f"outputs/{sid}.stats.xml")
+        for item in tree.findall("tripinfo"):
+            if float(item.get("arrival", 0)) < 0:
+                # nunca llego a destino. Se le cobra el horizonte completo en
+                # vez de lo que llevara acumulado al cortar: si no, cortar antes
+                # abarata a las soluciones que traban la red y el GA aprende a
+                # trabarla. Asi la penalizacion no depende de cuando se corto
+                sin_terminar += 1
+                durations.append(float(self.MAX_STEPS))
+                waiting_times.append(float(self.MAX_STEPS))
+            else:
+                durations.append(float(item.get("duration", 0)))
+                waiting_times.append(float(item.get("waitingTime", 0)))
+
+        stats = self.read_statistics(f"outputs/{sid}.stats.xml")
+        stats["pasos"] = pasos
+        stats["trabada"] = trabada
+        stats["sin_terminar"] = sin_terminar
+        stats["registros"] = len(durations)
+
+        return durations, waiting_times, stats
+
+
+    def step_until_done(self):
+        """
+        avanza la simulacion hasta que no quede ningun vehiculo por salir,
+        con un tope de pasos.
+
+        El tope existe porque sin teletransportes una red trabada no se
+        destraba: sin el, una mala solucion colgaria la corrida entera. Si se
+        alcanza el tope la simulacion se corta, pero gracias a
+        --tripinfo-output.write-unfinished los vehiculos atascados igual quedan
+        contabilizados con su demora acumulada, asi que la solucion puntua mal
+        en vez de puntuar bien por omision.
+        """
+        pasos, silencio = 0, 0
+
+        while traci.simulation.getMinExpectedNumber() > 0 and pasos < self.MAX_STEPS:
+            traci.simulationStep()
+            pasos += 1
+
+            # una red sana produce llegadas de forma continua. Si pasan varios
+            # minutos simulados sin que llegue nadie, esta trabada: cortar ahi
+            # en vez de agotar el tope ahorra la mayor parte del costo, porque
+            # las soluciones malas son justo las que llegaban al tope
+            if traci.simulation.getArrivedNumber() > 0:
+                silencio = 0
+            else:
+                silencio += 1
+                if silencio >= self.MAX_QUIET:
+                    break
+
+        return pasos, traci.simulation.getMinExpectedNumber() > 0
 
 
     def read_statistics(self, path):
@@ -190,6 +270,12 @@ class Controller:
                         "waitingTime", "timeLoss", "departDelay"):
                 if trips.get(key) is not None:
                     stats[key] = float(trips.get(key))
+
+        # vehiculos que seguian en la red al terminar: con los teletransportes
+        # desactivados, cualquier valor > 0 significa que la solucion trabo la red
+        vehiculos = root.find("vehicles")
+        if vehiculos is not None:
+            stats["sin_llegar"] = int(vehiculos.get("running", 0)) + int(vehiculos.get("waiting", 0))
 
         teleports = root.find("teleports")
         if teleports is not None:
@@ -223,12 +309,9 @@ class Controller:
                     "--tripinfo-output", paths["tripinfo"],
                     "--statistic-output", paths["statistic"],
                     "--summary-output", paths["summary"],
-                    "--edgedata-output", paths["edgedata"],
-                    "--seed", str(self.SEED),
-                    "--no-step-log", "true", "--no-warnings", "true"])
+                    "--edgedata-output", paths["edgedata"]] + self.sim_flags())
 
-        while traci.simulation.getMinExpectedNumber() > 0:
-            traci.simulationStep()
+        self.step_until_done()
         self.reset()
         time.sleep(0.05)
 
@@ -250,23 +333,26 @@ class Controller:
         """
         Construye un archivo con la solucion para aplicarle a SUMO.
 
-        El genoma trae dos tramos:
-        - [0 : n_fases]   duraciones de fase en segundos
-        - [n_fases : ]    un offset por semaforo, en porcentaje del ciclo
+        El genoma trae tres tramos:
+        - un ciclo por semaforo, en segundos
+        - los pesos de reparto de las fases variables
+        - un offset por semaforo, en porcentaje del ciclo
 
-        gene_slices son los indices de corte del primer tramo, uno por semaforo.
+        gene_slices son los indices de corte del tramo de pesos.
         """
-        n_fases = int(gene_slices[-1])
-        esperado = n_fases + len(tls_ids)
+        n_tls = len(tls_ids)
+        n_pesos = int(gene_slices[-1])
+        esperado = n_tls + n_pesos + n_tls
 
         if len(solution) != esperado:
             raise ValueError(
                 f"El genoma trae {len(solution)} genes y se esperaban {esperado}: "
-                f"{n_fases} duraciones + {len(tls_ids)} offsets."
+                f"{n_tls} ciclos + {n_pesos} pesos + {n_tls} offsets."
             )
 
-        duraciones = solution[:n_fases]
-        offsets_pct = solution[n_fases:]
+        ciclos = solution[:n_tls]
+        pesos_all = solution[n_tls:n_tls + n_pesos]
+        offsets_pct = solution[n_tls + n_pesos:]
 
         tree = ET.parse(self.TEMPLATE)
         root = tree.getroot()
@@ -282,32 +368,35 @@ class Controller:
 
         # --- Generar e insertar los nuevos tlLogic ---
         for i, tl_id in enumerate(tls_ids):
-            start, end = gene_slices[i], gene_slices[i + 1]
-            durations = duraciones[start:end]
-
             logic = self.get_tl_logic(tl_id)
-            new_phases = [
-                self.phase(logic.phases[j], durations[j])
-                for j in range(len(logic.phases))
-            ]
-            new_logic = self.logic(logic, new_phases)
+            indices, ambar, minimos = self.split_layout(logic)
 
-            # el offset viaja como porcentaje del ciclo porque su dominio
-            # depende del ciclo, que es la suma de otros genes. Aqui se
-            # convierte a segundos, que es lo que entiende SUMO
-            ciclo = sum(float(d) for d in durations)
-            offset = int(round(ciclo * float(offsets_pct[i]) / 100)) % int(round(ciclo)) if ciclo > 0 else 0
+            # el ciclo nunca puede bajar del minimo fisico de la interseccion
+            ciclo = max(int(ciclos[i]), ambar + sum(minimos))
+            pesos = pesos_all[gene_slices[i]:gene_slices[i + 1]]
+            variables = self.reparto(ciclo, ambar, minimos, pesos)
+
+            # las fases variables toman su reparto, los ambares se copian
+            duraciones = []
+            siguiente = iter(variables)
+            for j, phase in enumerate(logic.phases):
+                duraciones.append(next(siguiente) if j in indices
+                                  else int(round(float(phase.duration))))
+
+            # el offset viaja como porcentaje porque su dominio es [0, ciclo)
+            # y el ciclo es otro gen: en porcentaje el rango queda fijo
+            offset = int(round(ciclo * float(offsets_pct[i]) / 100)) % ciclo
 
             tl_elem = ET.Element("tlLogic", {
                 "id": str(tl_id),
                 "type": "static",
-                "programID": str(new_logic.programID),
+                "programID": str(logic.programID),
                 "offset": str(offset)
             })
 
-            for phase in new_logic.phases:
+            for phase, duracion in zip(logic.phases, duraciones):
                 ET.SubElement(tl_elem, "phase", {
-                    "duration": str(phase.duration),
+                    "duration": str(float(duracion)),
                     "state": str(phase.state)
                 })
 
@@ -318,6 +407,74 @@ class Controller:
         ET.indent(tree, space="\t")
         tree.write(f"logics/{sid}.net.xml", encoding="utf-8", xml_declaration=True)
     
+
+    def phase_kind(self, state):
+        """
+        clasifica una fase por su estado. Se pregunta primero por el verde: una
+        fase con movimiento en verde es una fase verde aunque arrastre un ambar
+        """
+        if 'G' in state or 'g' in state:
+            return "verde"
+        if 'y' in state:
+            return "ambar"
+        return "rojo"
+
+
+    def split_layout(self, logic):
+        """
+        estructura de reparto de una interseccion:
+        (indices de las fases que son variables, ambar total, minimos)
+
+        Los ambares no son variables: su duracion la fija la velocidad de
+        aproximacion, no el trafico. Se suman aparte y se copian tal cual.
+
+        Es la pieza que comparten el armado del genoma, el espacio de busqueda
+        y la decodificacion, para que las tres vean la misma estructura.
+        """
+        indices, minimos, ambar = [], [], 0
+
+        for j, phase in enumerate(logic.phases):
+            tipo = self.phase_kind(phase.state)
+            if tipo == "ambar":
+                ambar += int(round(float(phase.duration)))
+            else:
+                indices.append(j)
+                minimos.append(self.MIN_VERDE if tipo == "verde" else self.MIN_ROJO)
+
+        return indices, ambar, minimos
+
+
+    def min_cycle(self, logic):
+        """
+        ciclo mas corto fisicamente admisible: los ambares mas los minimos
+        """
+        _, ambar, minimos = self.split_layout(logic)
+        return ambar + sum(minimos)
+
+
+    def reparto(self, ciclo, ambar, minimos, pesos):
+        """
+        reparte el tiempo del ciclo que no es ambar entre las fases variables,
+        proporcionalmente a sus pesos y respetando los minimos de seguridad.
+
+        Usa restos mayores para que la suma de exactamente el ciclo pedido: sin
+        eso el redondeo haria que el ciclo real se aleje del que pidio el gen.
+        """
+        extra = ciclo - ambar - sum(minimos)
+        pesos = [max(1, int(p)) for p in pesos]
+        total = sum(pesos)
+
+        crudo = [p * extra / total for p in pesos]
+        parte = [int(x) for x in crudo]
+
+        # el sobrante del redondeo va a las fases con mayor resto fraccionario
+        sobrante = extra - sum(parte)
+        orden = sorted(range(len(crudo)), key=lambda k: crudo[k] - parte[k], reverse=True)
+        for k in orden[:sobrante]:
+            parte[k] += 1
+
+        return [m + p for m, p in zip(minimos, parte)]
+
 
     def read_offsets(self, network):
         """
@@ -331,32 +488,41 @@ class Controller:
 
     def build_genome(self):
         """
-        recorre los ids de los semaforos para armar el genoma, que tiene
-        dos tramos:
+        arma el genoma en tres tramos:
 
-        - duraciones: una por fase, en segundos
-        - offsets: uno por semaforo, en porcentaje del ciclo
+            [ un ciclo por semaforo ]  [ pesos de reparto ]  [ un offset por semaforo ]
 
-        Tambien devuelve la cantidad de fases de cada semaforo, que es lo que
-        permite asociar cada duracion con su semaforo al decodificar.
+        El ciclo es la variable que mas pesa en la demora y antes no existia:
+        era la suma de las duraciones, o sea que moverlo exigia mutar de forma
+        coordinada las 3 o 4 fases de cada interseccion a la vez. Ahora es un
+        gen y la mutacion lo alcanza directo.
+
+        Las duraciones dejan de ser segundos absolutos y pasan a ser pesos de
+        reparto del tiempo disponible. Los ambares no son genes.
+
+        Devuelve tambien cuantas fases variables tiene cada semaforo, que es lo
+        que permite trocear el tramo de pesos al decodificar.
         """
-        genome = []
-        phase_counts = []
-        offsets_pct = []
-
+        ciclos, pesos, offsets_pct, split_counts = [], [], [], []
         base_offsets = self.read_offsets(self.NETWORK)
 
         for tl_id in self.get_tl_ids():
             logic = traci.trafficlight.getAllProgramLogics(tl_id)[0]
-            phase_counts.append(len(logic.phases))
-            for phase in logic.phases:
-                genome.append(phase.duration)
+            indices, ambar, minimos = self.split_layout(logic)
 
-            ciclo = sum(float(p.duration) for p in logic.phases)
+            ciclo = int(round(sum(float(p.duration) for p in logic.phases)))
+            ciclos.append(ciclo)
+            split_counts.append(len(indices))
+
+            # el peso que reproduce exactamente la duracion original: lo que
+            # esa fase tiene por encima de su minimo
+            for j, minimo in zip(indices, minimos):
+                pesos.append(max(1, int(round(float(logic.phases[j].duration))) - minimo))
+
             segundos = base_offsets.get(tl_id, 0.0)
             offsets_pct.append(int(round(100 * segundos / ciclo)) % 100 if ciclo > 0 else 0)
 
-        return genome + offsets_pct, phase_counts
+        return ciclos + pesos + offsets_pct, split_counts
 
 
     def close_sumo_conn(self):
