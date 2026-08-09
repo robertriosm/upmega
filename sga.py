@@ -3,6 +3,7 @@ implementacion de SGA con controlador
 """
 
 import csv, json, sys
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 import numpy as np
@@ -22,6 +23,7 @@ class TlSga:
                  mutation_probability = 0.1,
                  saturation = None,
                  k_tournament = 3,
+                 workers = 8,
                  random_seed = None,
                  w1 = 1.0,
                  w2 = 1.1
@@ -36,6 +38,7 @@ class TlSga:
                            mutation_probability,
                            saturation,
                            k_tournament,
+                           workers,
                            random_seed,
                            w1,
                            w2)
@@ -52,6 +55,7 @@ class TlSga:
                       mutation_probability,
                       saturation,
                       k_tournament,
+                      workers,
                       random_seed,
                       w1,
                       w2):
@@ -76,6 +80,9 @@ class TlSga:
         # Con K bajo y pocos padres el mejor individuo puede pasar generaciones
         # enteras sin reproducirse, aunque sobreviva como elite
         self.k_tournament = k_tournament
+        # cuantas simulaciones corren a la vez. Cada una es un proceso SUMO
+        # aislado, asi que el resultado no depende de este valor: solo el tiempo
+        self.workers = max(1, int(workers))
         self.random_seed = random_seed
         # los pesos viven aqui y no dentro de la funcion de fitness para poder
         # registrarlos: son parte de la definicion del problema, no un detalle
@@ -101,43 +108,67 @@ class TlSga:
         inicializar y configurar el GA
         """
 
-        def fitness(ga_instance, solution, tls_ids, gene_slices):
+        def fitness(ga_instance, soluciones, indices, tls_ids, gene_slices):
             """
             F = 1 / (w1T1 + w2T2)
             donde: w1, w2 son los pesos, T1 es tiempo de viaje y T2 tiempo en cola.
             Se invierte porque pygad maximiza y aqui se busca minimizar demoras.
+
+            pygad la llama una vez por LOTE de soluciones y espera de vuelta una
+            lista del mismo largo y EN EL MISMO ORDEN. Mantener ese orden es lo
+            unico que podria romper la logica del GA en silencio, porque pygad
+            valida el largo pero no el orden.
+
+            Las evaluaciones de un lote corren a la vez: cada una es un proceso
+            SUMO aislado con su propia red, su semilla y sus archivos, asi que
+            el resultado de una no depende de las otras ni de cuantas corran.
             """
-            sid = self.sid
-            self.controller.apply_solution(solution, sid, tls_ids, gene_slices)
-            durations, waiting_times, stats = self.controller.execute_simulation(sid)
-            self.sid += 1 # aumentar como id unico
+            soluciones = list(soluciones)
+            sids = list(range(self.sid, self.sid + len(soluciones)))
+            self.sid += len(soluciones) # ids unicos, reservados de una vez
 
-            # Sin normalizacion
-            T1 = np.array(durations, dtype=np.float32)
-            T2 = np.array(waiting_times, dtype=np.float32)
+            def evaluar(par):
+                sid, solucion = par
+                self.controller.apply_solution(solucion, sid, tls_ids, gene_slices)
+                return self.controller.run_simulation(sid)
 
-            T1_mean = np.mean(T1)
-            T2_mean = np.mean(T2)
+            with ThreadPoolExecutor(max_workers=self.workers) as pool:
+                # map conserva el orden de entrada, que es justo lo que pygad exige
+                resultados = list(pool.map(evaluar, zip(sids, soluciones)))
 
-            F = 1 / (self.w1 * T1_mean + self.w2 * T2_mean + 1e-6)
+            valores, filas = [], []
 
-            # log por evaluacion: sin esto, asociar un fitness con la red que lo
-            # produjo obliga a reparsear todos los tripinfos a mano
-            self.evaluations.append({
-                "sid": sid,
-                "generation": ga_instance.generations_completed,
-                "fitness": float(F),
-                "duration_mean": round(float(T1_mean), 3),
-                "waiting_mean": round(float(T2_mean), 3),
-                "time_loss": stats.get("timeLoss"),
-                "speed": stats.get("speed"),
-                "sin_llegar": stats.get("sin_llegar"),
-                "trabada": stats.get("trabada"),
-                "pasos": stats.get("pasos"),
-                "vehicles": stats.get("count"),
-            })
+            for sid, (durations, waiting_times, stats) in zip(sids, resultados):
+                # Sin normalizacion
+                T1 = np.array(durations, dtype=np.float32)
+                T2 = np.array(waiting_times, dtype=np.float32)
 
-            return F
+                T1_mean = np.mean(T1)
+                T2_mean = np.mean(T2)
+
+                F = 1 / (self.w1 * T1_mean + self.w2 * T2_mean + 1e-6)
+                valores.append(float(F))
+
+                # log por evaluacion: sin esto, asociar un fitness con la red que
+                # lo produjo obliga a reparsear todos los tripinfos a mano
+                filas.append({
+                    "sid": sid,
+                    "generation": ga_instance.generations_completed,
+                    "fitness": float(F),
+                    "duration_mean": round(float(T1_mean), 3),
+                    "waiting_mean": round(float(T2_mean), 3),
+                    "time_loss": stats.get("timeLoss"),
+                    "speed": stats.get("speed"),
+                    "sin_llegar": stats.get("sin_llegar"),
+                    "trabada": stats.get("trabada"),
+                    "pasos": stats.get("pasos"),
+                    "vehicles": stats.get("count"),
+                })
+
+            # se extiende una sola vez y en orden, no desde los hilos
+            self.evaluations.extend(filas)
+
+            return valores
     
 
         def build_gene_space(tls_ids):
@@ -194,6 +225,12 @@ class TlSga:
             return initial_pop
     
 
+        # pygad siembra numpy dentro de su constructor, pero la poblacion inicial
+        # se genera ANTES, asi que sin esto los individuos aleatorios cambiaban
+        # en cada corrida aunque random_seed estuviera fijo
+        if self.random_seed is not None:
+            np.random.seed(self.random_seed)
+
         base_genome, split_counts = self.controller.build_genome()
         # indices de corte del tramo de pesos, uno por semaforo.
         # Se llama gene_slices y no offsets para no confundirlo con el offset
@@ -202,13 +239,16 @@ class TlSga:
         tls_ids = self.controller.get_tl_ids() # garantizar la misma lista
         self.gene_space = build_gene_space(tls_ids)
 
-        fitness_func = lambda ga_instance, solution, solution_idx: fitness(ga_instance, solution, tls_ids, gene_slices)
+        fitness_func = lambda ga_instance, soluciones, indices: fitness(ga_instance, soluciones, indices, tls_ids, gene_slices)
 
         initial_pop = gen_initial_pop(base_genome)
 
         self.ga_instance = ga.GA(num_generations=self.generations,
                                  num_parents_mating=self.mating_pool_size, 
                                  fitness_func=fitness_func,
+                                 # un solo lote por generacion: pygad ya descarto
+                                 # antes al elite, que reusa su fitness cacheado
+                                 fitness_batch_size=self.population,
                                  sol_per_pop=self.population, 
                                  num_genes=len(base_genome),
                                  parent_selection_type=self.selection_type,
@@ -314,6 +354,9 @@ class TlSga:
                 "keep_parents": ga_i.keep_parents,
                 "stop_criteria": ga_i.stop_criteria,
                 "random_seed": self.random_seed,
+                # no afecta el resultado, solo el tiempo: cada evaluacion es un
+                # proceso aislado y determinista
+                "workers": self.workers,
                 "poblacion_inicial": "individuo 0 = genoma por defecto de netconvert, resto aleatorio",
                 "gene_space": {
                     "genes": len(self.gene_space),

@@ -19,6 +19,11 @@ def parse_args():
                         help="semilla de randomTrips al generar la demanda (default 42)")
     parser.add_argument("--regenerate", action="store_true",
                         help="regenerar la demanda aunque el archivo ya exista")
+    parser.add_argument("--workers", type=int, default=6, metavar="W",
+                        help="simulaciones SUMO en paralelo (default 6, los nucleos fisicos "
+                             "de esta maquina: medido, de 6 en adelante no acelera mas). "
+                             "Cada una es un proceso aislado, asi que cambia el tiempo pero "
+                             "no los resultados. Usar 1 para correr secuencial")
     parser.add_argument("--saturation", type=int, default=None, metavar="K",
                         help="detener la corrida si el mejor fitness no mejora en K "
                              "generaciones seguidas. Si se omite no hay paro anticipado "
@@ -47,6 +52,7 @@ if __name__ == '__main__':
                 selection_type="tournament",
                 crossover_type="uniform",
                 mutation_probability=0.02,
+                workers=args.workers,
                 random_seed=42,
                 saturation=f"saturate_{args.saturation}" if args.saturation else None)
     sga.execute(filename="auto")

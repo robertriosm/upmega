@@ -2,7 +2,7 @@
 clase dedicada a la interaccion con SUMO y comunicacion con el algoritmo 
 """
 
-import traci, os, time
+import traci, os, time, subprocess
 import xml.etree.ElementTree as ET
 
 
@@ -101,9 +101,64 @@ class Controller:
         cmd = [self.SUMO_BINARY, "-c", self.CONFIG, "--no-step-log", "true", "--no-warnings", "true"] 
 
         try:
-            traci.start(cmd, port=self.PORT) 
-        except Exception as e: 
-            raise RuntimeError(f"Error iniciando SUMO: {e}") 
+            traci.start(cmd, port=self.PORT)
+        except Exception as e:
+            raise RuntimeError(f"Error iniciando SUMO: {e}")
+
+        # todo lo que la evaluacion necesita saber de la red se lee aqui, una
+        # sola vez. A partir de este punto evaluar no depende de TraCI, que es
+        # lo que permite correr varias simulaciones a la vez
+        self.cache_tl_layout()
+        self.cache_template()
+
+
+    def cache_tl_layout(self):
+        """
+        lee una sola vez la estructura de cada semaforo: estados de fase,
+        duraciones originales, indices variables, ambar total, minimos y
+        programID.
+
+        Todo eso es invariante entre soluciones: los ambares se copian sin
+        tocar y los estados nunca cambian. Consultarlo por evaluacion era
+        trabajo repetido y, sobre todo, ataba la evaluacion a la conexion TraCI.
+        """
+        self.TL_LAYOUT = {}
+
+        for tl_id in self.get_tl_ids():
+            logic = self.get_tl_logic(tl_id)
+            indices, ambar, minimos = self.split_layout(logic)
+            self.TL_LAYOUT[tl_id] = {
+                "estados": [p.state for p in logic.phases],
+                "duraciones": [int(round(float(p.duration))) for p in logic.phases],
+                "indices": indices,
+                "ambar": ambar,
+                "minimos": minimos,
+                "programID": logic.programID,
+            }
+
+        return self.TL_LAYOUT
+
+
+    def cache_template(self):
+        """
+        parte la plantilla en (cabecera, cola) por el punto donde se insertan
+        los tlLogic: el inicio de la linea del primer <junction>.
+
+        Antes cada evaluacion hacia ET.parse de 1.37 MB, ET.indent sobre el
+        arbol entero y tree.write: del orden de medio segundo de Python por
+        individuo. Como texto es concatenar, milisegundos.
+        """
+        with open(self.TEMPLATE, "r", encoding="utf-8") as f:
+            texto = f.read()
+
+        corte = texto.find("<junction ")
+        if corte < 0:
+            raise RuntimeError(f"No se encontro ninguna etiqueta <junction> en {self.TEMPLATE}")
+
+        # retroceder al inicio de la linea para controlar la indentacion
+        inicio = texto.rfind("\n", 0, corte) + 1
+        self.TPL_HEAD = texto[:inicio]
+        self.TPL_TAIL = texto[inicio:]
     
     
     def reset(self):
@@ -172,11 +227,12 @@ class Controller:
 
     def execute_simulation(self, sid):
         """
-        Ejecuta la simulación y lee los resultados desde tripinfo-output.
-        """
-        output_path = f"outputs/{sid}.xml"
+        Ejecuta la simulación por TraCI y lee los resultados.
 
-        # Ejecutar simulación con salida de tripinfos
+        Es el camino original, avanzando la simulacion paso a paso desde aqui.
+        Se conserva porque permite el guardia de inactividad y porque sirve de
+        referencia para comprobar que el camino por subproceso da lo mismo.
+        """
         self.reload(sid)
         pasos, trabada = self.step_until_done()
         self.reset()
@@ -184,7 +240,50 @@ class Controller:
         # Esperar brevemente a que SUMO termine de escribir el archivo
         time.sleep(0.05)
 
-        # Leer el archivo generado por SUMO
+        durations, waiting_times, stats = self.read_results(sid)
+        stats["pasos"] = pasos
+        stats["trabada"] = trabada
+
+        return durations, waiting_times, stats
+
+
+    def run_simulation(self, sid):
+        """
+        Ejecuta la simulación como proceso aparte, sin TraCI.
+
+        Es lo que permite paralelizar: cada evaluacion queda aislada con su
+        propia red, su semilla y sus archivos, sin estado compartido. Ademas la
+        muerte del proceso garantiza que las salidas quedaron completas en
+        disco, cosa que la respuesta de traci.load no garantiza.
+
+        --end sustituye al bucle de pasos. Es tiempo de SIMULACION, no de
+        reloj: un tope por reloj haria que el resultado dependiera de la carga
+        de la maquina y rompería la reproducibilidad.
+        """
+        cmd = [self.SUMO_BINARY,
+               "-n", f"logics/{sid}.net.xml",
+               "-r", self.ROUTES,
+               "--tripinfo-output", f"outputs/{sid}.xml",
+               "--statistic-output", f"outputs/{sid}.stats.xml",
+               "--end", str(self.MAX_STEPS)] + self.sim_flags()
+
+        try:
+            subprocess.run(cmd, check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(
+                f"SUMO fallo en la evaluacion {sid} (codigo {e.returncode}): {e.stderr}"
+            ) from e
+
+        return self.read_results(sid)
+
+
+    def read_results(self, sid):
+        """
+        parsea las salidas de una evaluacion. Lo comparten los dos caminos
+        (TraCI y subproceso) para garantizar que calculan exactamente lo mismo.
+        """
+        output_path = f"outputs/{sid}.xml"
+
         if not os.path.exists(output_path):
             raise FileNotFoundError(f"No se generó el archivo {output_path}")
 
@@ -212,10 +311,11 @@ class Controller:
                 waiting_times.append(float(item.get("waitingTime", 0)))
 
         stats = self.read_statistics(f"outputs/{sid}.stats.xml")
-        stats["pasos"] = pasos
-        stats["trabada"] = trabada
         stats["sin_terminar"] = sin_terminar
         stats["registros"] = len(durations)
+        # por subproceso no se cuentan pasos; la red trabada se detecta igual
+        stats["pasos"] = None
+        stats["trabada"] = stats.get("sin_llegar", 0) > 0
 
         return durations, waiting_times, stats
 
@@ -354,22 +454,11 @@ class Controller:
         pesos_all = solution[n_tls:n_tls + n_pesos]
         offsets_pct = solution[n_tls + n_pesos:]
 
-        tree = ET.parse(self.TEMPLATE)
-        root = tree.getroot()
+        partes = []
 
-        # Buscar el primer <junction> para insertar los <tlLogic> antes de eso
-        insert_index = None
-        for i, elem in enumerate(root):
-            if elem.tag == "junction":
-                insert_index = i
-                break 
-        if insert_index is None:
-            raise RuntimeError("No se encontró ninguna etiqueta <junction> en la plantilla base.")
-
-        # --- Generar e insertar los nuevos tlLogic ---
         for i, tl_id in enumerate(tls_ids):
-            logic = self.get_tl_logic(tl_id)
-            indices, ambar, minimos = self.split_layout(logic)
+            tl = self.TL_LAYOUT[tl_id]
+            indices, ambar, minimos = tl["indices"], tl["ambar"], tl["minimos"]
 
             # el ciclo nunca puede bajar del minimo fisico de la interseccion
             ciclo = max(int(ciclos[i]), ambar + sum(minimos))
@@ -379,33 +468,23 @@ class Controller:
             # las fases variables toman su reparto, los ambares se copian
             duraciones = []
             siguiente = iter(variables)
-            for j, phase in enumerate(logic.phases):
-                duraciones.append(next(siguiente) if j in indices
-                                  else int(round(float(phase.duration))))
+            for j, original in enumerate(tl["duraciones"]):
+                duraciones.append(next(siguiente) if j in indices else original)
 
             # el offset viaja como porcentaje porque su dominio es [0, ciclo)
             # y el ciclo es otro gen: en porcentaje el rango queda fijo
             offset = int(round(ciclo * float(offsets_pct[i]) / 100)) % ciclo
 
-            tl_elem = ET.Element("tlLogic", {
-                "id": str(tl_id),
-                "type": "static",
-                "programID": str(logic.programID),
-                "offset": str(offset)
-            })
+            partes.append(f'    <tlLogic id="{tl_id}" type="static" '
+                          f'programID="{tl["programID"]}" offset="{offset}">\n')
+            for estado, duracion in zip(tl["estados"], duraciones):
+                partes.append(f'        <phase duration="{float(duracion)}" state="{estado}"/>\n')
+            partes.append('    </tlLogic>\n')
 
-            for phase, duracion in zip(logic.phases, duraciones):
-                ET.SubElement(tl_elem, "phase", {
-                    "duration": str(float(duracion)),
-                    "state": str(phase.state)
-                })
-
-            # Insertar justo antes del primer <junction>
-            root.insert(insert_index, tl_elem)
-            insert_index += 1  # mantener el orden para múltiples tlLogic
-
-        ET.indent(tree, space="\t")
-        tree.write(f"logics/{sid}.net.xml", encoding="utf-8", xml_declaration=True)
+        with open(f"logics/{sid}.net.xml", "w", encoding="utf-8") as f:
+            f.write(self.TPL_HEAD)
+            f.write("".join(partes))
+            f.write(self.TPL_TAIL)
     
 
     def phase_kind(self, state):
