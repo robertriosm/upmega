@@ -70,6 +70,41 @@ def barras(ax, base, opt, titulo, etiquetas):
     ax.set_title(titulo, fontsize=12.5, color=TINTA, pad=14, loc="left")
 
 
+def fitness(run, destino):
+    """evolucion del fitness por generacion, en J (segundos) para que se lea"""
+    import cloudpickle
+    with open(f"{run}.pkl", "rb") as f:
+        ga = cloudpickle.load(f)
+    J = [1 / v for v in ga.best_solutions_fitness]
+
+    fig, ax = plt.subplots(figsize=(9, 4.6))
+    ax.set_axisbelow(True)
+    ax.yaxis.grid(True, color=REJILLA, linewidth=0.8)
+    for lado in ("top", "right", "left"):
+        ax.spines[lado].set_visible(False)
+    ax.spines["bottom"].set_color(EJE)
+
+    ax.plot(range(len(J)), J, color=AZUL, linewidth=2, solid_capstyle="round")
+    mejor = int(np.argmin(J))
+    ax.plot(mejor, J[mejor], "o", markersize=9, color=AZUL,
+            markeredgecolor=FONDO, markeredgewidth=2)
+    ax.annotate(f"generación {mejor}\nJ = {J[mejor]:.1f} s",
+                (mejor, J[mejor]), textcoords="offset points", xytext=(-12, 16),
+                ha="right", fontsize=10, color=TINTA_2)
+    ax.annotate(f"punto de partida (netconvert)\nJ = {J[0]:.1f} s",
+                (0, J[0]), textcoords="offset points", xytext=(14, -4),
+                ha="left", va="top", fontsize=10, color=TINTA_2)
+
+    ax.set_xlabel("generación", fontsize=10, color=TINTA_2)
+    ax.set_ylabel("J = viaje + 1.1 × espera  (s)", fontsize=10, color=TINTA_2)
+    ax.tick_params(colors=APAGADO, length=0, labelsize=10)
+    ax.set_title("Evolución del mejor individuo", fontsize=12.5, color=TINTA,
+                 pad=14, loc="left")
+    fig.tight_layout()
+    fig.savefig(destino, dpi=200, facecolor=FONDO)
+    print(f"escrito: {destino}")
+
+
 def main(run):
     db, wb = leer(f"detail/{run}.baseline.tripinfo.xml")
     dm, wm = leer(f"detail/{run}.best.tripinfo.xml")
@@ -95,6 +130,7 @@ def main(run):
     fig.tight_layout(rect=[0, 0.06, 1, 0.94])
     fig.savefig(f"{run}.comparativa.png", dpi=200, facecolor=FONDO)
     print(f"escrito: {run}.comparativa.png")
+    fitness(run, f"{run}.fitness.png")
 
 
 if __name__ == "__main__":
