@@ -1,0 +1,1113 @@
+{
+  "run": "g150p30m12touuniP2c2600s42",
+  "ciclo_uniforme_s": 51,
+  "semillas_demanda": [
+    42,
+    1,
+    2,
+    3,
+    4
+  ],
+  "semillas_sumo": [
+    23,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "vehiculos_por_demanda": {
+    "42": 2002,
+    "1": 2020,
+    "2": 2020,
+    "3": 2047,
+    "4": 2042
+  },
+  "simulaciones": 105,
+  "J_por_plan": {
+    "netconvert": {
+      "media": 2005.9,
+      "desviacion": 1918.0,
+      "min": 613.8,
+      "max": 6751.2
+    },
+    "algoritmo": {
+      "media": 594.3,
+      "desviacion": 113.8,
+      "min": 428.8,
+      "max": 981.0
+    },
+    "uniforme": {
+      "media": 1458.2,
+      "desviacion": 1664.6,
+      "min": 478.1,
+      "max": 5735.9
+    }
+  },
+  "J_por_plan_y_demanda": {
+    "netconvert": {
+      "42": {
+        "media": 1333.6,
+        "desviacion": 1131.6,
+        "min": 878.1,
+        "max": 3899.5
+      },
+      "1": {
+        "media": 865.2,
+        "desviacion": 23.0,
+        "min": 830.2,
+        "max": 901.8
+      },
+      "2": {
+        "media": 2016.1,
+        "desviacion": 2090.7,
+        "min": 1020.2,
+        "max": 6751.2
+      },
+      "3": {
+        "media": 717.8,
+        "desviacion": 188.4,
+        "min": 613.8,
+        "max": 1140.8
+      },
+      "4": {
+        "media": 5096.9,
+        "desviacion": 176.0,
+        "min": 4798.2,
+        "max": 5294.0
+      }
+    },
+    "algoritmo": {
+      "42": {
+        "media": 517.1,
+        "desviacion": 71.4,
+        "min": 428.8,
+        "max": 594.5
+      },
+      "1": {
+        "media": 552.0,
+        "desviacion": 41.2,
+        "min": 518.7,
+        "max": 625.3
+      },
+      "2": {
+        "media": 752.6,
+        "desviacion": 124.5,
+        "min": 628.8,
+        "max": 981.0
+      },
+      "3": {
+        "media": 529.8,
+        "desviacion": 7.2,
+        "min": 520.6,
+        "max": 543.9
+      },
+      "4": {
+        "media": 619.9,
+        "desviacion": 84.2,
+        "min": 538.3,
+        "max": 786.6
+      }
+    },
+    "uniforme": {
+      "42": {
+        "media": 1022.4,
+        "desviacion": 1054.5,
+        "min": 478.1,
+        "max": 3407.1
+      },
+      "1": {
+        "media": 761.5,
+        "desviacion": 308.2,
+        "min": 563.2,
+        "max": 1450.0
+      },
+      "2": {
+        "media": 3639.2,
+        "desviacion": 2349.6,
+        "min": 1071.2,
+        "max": 5735.9
+      },
+      "3": {
+        "media": 613.6,
+        "desviacion": 129.0,
+        "min": 518.0,
+        "max": 876.7
+      },
+      "4": {
+        "media": 1254.3,
+        "desviacion": 1318.7,
+        "min": 693.8,
+        "max": 4242.6
+      }
+    }
+  },
+  "casos_con_vehiculos_sin_terminar": {
+    "netconvert": 9,
+    "algoritmo": 0,
+    "uniforme": 7
+  },
+  "mejora_algoritmo_vs_netconvert_pct": {
+    "media": 48.6,
+    "desviacion": 25.4,
+    "min": 13.7,
+    "max": 89.7
+  },
+  "mejora_algoritmo_vs_uniforme_pct": {
+    "media": 28.8,
+    "desviacion": 30.7,
+    "min": -11.0,
+    "max": 88.5
+  },
+  "casos_algoritmo_mejor_que_netconvert": 35,
+  "casos_algoritmo_mejor_que_uniforme": 31,
+  "casos": 35,
+  "filas": [
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 42,
+      "semilla_sumo": 23,
+      "J": 878.11,
+      "vehiculos": 2002,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 424.79
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 42,
+      "semilla_sumo": 23,
+      "J": 428.8,
+      "vehiculos": 2002,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 214.12
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 42,
+      "semilla_sumo": 23,
+      "J": 478.14,
+      "vehiculos": 2002,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 234.92
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 42,
+      "semilla_sumo": 1,
+      "J": 941.81,
+      "vehiculos": 2002,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 456.52
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 42,
+      "semilla_sumo": 1,
+      "J": 453.78,
+      "vehiculos": 2002,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 226.14
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 42,
+      "semilla_sumo": 1,
+      "J": 644.82,
+      "vehiculos": 2002,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 316.67
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 42,
+      "semilla_sumo": 2,
+      "J": 911.36,
+      "vehiculos": 2002,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 440.22
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 42,
+      "semilla_sumo": 2,
+      "J": 593.91,
+      "vehiculos": 2002,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 292.95
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 42,
+      "semilla_sumo": 2,
+      "J": 655.1,
+      "vehiculos": 2002,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 320.98
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 42,
+      "semilla_sumo": 3,
+      "J": 3899.51,
+      "vehiculos": 2002,
+      "sin_terminar": 342,
+      "tiempo_perdido_medio": 1729.76
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 42,
+      "semilla_sumo": 3,
+      "J": 594.49,
+      "vehiculos": 2002,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 293.25
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 42,
+      "semilla_sumo": 3,
+      "J": 715.04,
+      "vehiculos": 2002,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 350.27
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 42,
+      "semilla_sumo": 4,
+      "J": 909.19,
+      "vehiculos": 2002,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 440.07
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 42,
+      "semilla_sumo": 4,
+      "J": 583.9,
+      "vehiculos": 2002,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 287.87
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 42,
+      "semilla_sumo": 4,
+      "J": 572.35,
+      "vehiculos": 2002,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 280.54
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 42,
+      "semilla_sumo": 5,
+      "J": 902.94,
+      "vehiculos": 2002,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 437.13
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 42,
+      "semilla_sumo": 5,
+      "J": 484.74,
+      "vehiculos": 2002,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 241.11
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 42,
+      "semilla_sumo": 5,
+      "J": 684.22,
+      "vehiculos": 2002,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 334.15
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 42,
+      "semilla_sumo": 6,
+      "J": 892.27,
+      "vehiculos": 2002,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 432.19
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 42,
+      "semilla_sumo": 6,
+      "J": 480.25,
+      "vehiculos": 2002,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 238.43
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 42,
+      "semilla_sumo": 6,
+      "J": 3407.08,
+      "vehiculos": 2002,
+      "sin_terminar": 301,
+      "tiempo_perdido_medio": 1508.71
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 1,
+      "semilla_sumo": 23,
+      "J": 871.54,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 422.54
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 1,
+      "semilla_sumo": 23,
+      "J": 594.78,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 294.18
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 1,
+      "semilla_sumo": 23,
+      "J": 639.53,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 314.28
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 1,
+      "semilla_sumo": 1,
+      "J": 856.51,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 415.79
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 1,
+      "semilla_sumo": 1,
+      "J": 625.34,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 308.04
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 1,
+      "semilla_sumo": 1,
+      "J": 563.25,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 278.26
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 1,
+      "semilla_sumo": 2,
+      "J": 862.58,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 417.35
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 1,
+      "semilla_sumo": 2,
+      "J": 539.19,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 267.36
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 1,
+      "semilla_sumo": 2,
+      "J": 672.0,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 330.61
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 1,
+      "semilla_sumo": 3,
+      "J": 901.81,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 437.79
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 1,
+      "semilla_sumo": 3,
+      "J": 524.66,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 260.18
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 1,
+      "semilla_sumo": 3,
+      "J": 737.02,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 361.7
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 1,
+      "semilla_sumo": 4,
+      "J": 830.17,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 402.88
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 1,
+      "semilla_sumo": 4,
+      "J": 534.31,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 265.33
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 1,
+      "semilla_sumo": 4,
+      "J": 616.82,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 303.24
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 1,
+      "semilla_sumo": 5,
+      "J": 851.65,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 413.61
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 1,
+      "semilla_sumo": 5,
+      "J": 518.66,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 257.57
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 1,
+      "semilla_sumo": 5,
+      "J": 1449.98,
+      "vehiculos": 2020,
+      "sin_terminar": 92,
+      "tiempo_perdido_medio": 621.81
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 1,
+      "semilla_sumo": 6,
+      "J": 882.39,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 427.53
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 1,
+      "semilla_sumo": 6,
+      "J": 526.83,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 261.7
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 1,
+      "semilla_sumo": 6,
+      "J": 651.84,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 320.8
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 2,
+      "semilla_sumo": 23,
+      "J": 1247.59,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 601.84
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 2,
+      "semilla_sumo": 23,
+      "J": 768.12,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 377.88
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 2,
+      "semilla_sumo": 23,
+      "J": 5438.45,
+      "vehiculos": 2020,
+      "sin_terminar": 502,
+      "tiempo_perdido_medio": 2353.63
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 2,
+      "semilla_sumo": 1,
+      "J": 1184.23,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 572.35
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 2,
+      "semilla_sumo": 1,
+      "J": 658.37,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 324.65
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 2,
+      "semilla_sumo": 1,
+      "J": 5419.04,
+      "vehiculos": 2020,
+      "sin_terminar": 499,
+      "tiempo_perdido_medio": 2349.97
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 2,
+      "semilla_sumo": 2,
+      "J": 1289.6,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 621.97
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 2,
+      "semilla_sumo": 2,
+      "J": 841.0,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 413.1
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 2,
+      "semilla_sumo": 2,
+      "J": 1152.49,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 561.51
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 2,
+      "semilla_sumo": 3,
+      "J": 1366.18,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 659.05
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 2,
+      "semilla_sumo": 3,
+      "J": 980.98,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 481.36
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 2,
+      "semilla_sumo": 3,
+      "J": 1071.23,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 521.35
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 2,
+      "semilla_sumo": 4,
+      "J": 6751.21,
+      "vehiculos": 2020,
+      "sin_terminar": 625,
+      "tiempo_perdido_medio": 2913.89
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 2,
+      "semilla_sumo": 4,
+      "J": 727.38,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 358.88
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 2,
+      "semilla_sumo": 4,
+      "J": 5735.87,
+      "vehiculos": 2020,
+      "sin_terminar": 531,
+      "tiempo_perdido_medio": 2479.95
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 2,
+      "semilla_sumo": 5,
+      "J": 1020.24,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 493.49
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 2,
+      "semilla_sumo": 5,
+      "J": 628.83,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 311.65
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 2,
+      "semilla_sumo": 5,
+      "J": 5491.23,
+      "vehiculos": 2020,
+      "sin_terminar": 506,
+      "tiempo_perdido_medio": 2389.68
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 2,
+      "semilla_sumo": 6,
+      "J": 1253.62,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 605.0
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 2,
+      "semilla_sumo": 6,
+      "J": 663.8,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 328.83
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 2,
+      "semilla_sumo": 6,
+      "J": 1166.39,
+      "vehiculos": 2020,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 568.45
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 3,
+      "semilla_sumo": 23,
+      "J": 616.8,
+      "vehiculos": 2047,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 301.28
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 3,
+      "semilla_sumo": 23,
+      "J": 520.63,
+      "vehiculos": 2047,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 261.5
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 3,
+      "semilla_sumo": 23,
+      "J": 545.43,
+      "vehiculos": 2047,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 270.68
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 3,
+      "semilla_sumo": 1,
+      "J": 655.95,
+      "vehiculos": 2047,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 319.77
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 3,
+      "semilla_sumo": 1,
+      "J": 543.89,
+      "vehiculos": 2047,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 272.56
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 3,
+      "semilla_sumo": 1,
+      "J": 518.04,
+      "vehiculos": 2047,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 258.41
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 3,
+      "semilla_sumo": 2,
+      "J": 647.25,
+      "vehiculos": 2047,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 316.07
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 3,
+      "semilla_sumo": 2,
+      "J": 532.57,
+      "vehiculos": 2047,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 266.24
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 3,
+      "semilla_sumo": 2,
+      "J": 689.96,
+      "vehiculos": 2047,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 340.75
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 3,
+      "semilla_sumo": 3,
+      "J": 690.94,
+      "vehiculos": 2047,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 337.36
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 3,
+      "semilla_sumo": 3,
+      "J": 527.9,
+      "vehiculos": 2047,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 264.85
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 3,
+      "semilla_sumo": 3,
+      "J": 535.71,
+      "vehiculos": 2047,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 267.27
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 3,
+      "semilla_sumo": 4,
+      "J": 1140.83,
+      "vehiculos": 2047,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 552.47
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 3,
+      "semilla_sumo": 4,
+      "J": 526.17,
+      "vehiculos": 2047,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 263.21
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 3,
+      "semilla_sumo": 4,
+      "J": 572.42,
+      "vehiculos": 2047,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 284.12
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 3,
+      "semilla_sumo": 5,
+      "J": 659.31,
+      "vehiculos": 2047,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 322.64
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 3,
+      "semilla_sumo": 5,
+      "J": 527.32,
+      "vehiculos": 2047,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 263.74
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 3,
+      "semilla_sumo": 5,
+      "J": 556.93,
+      "vehiculos": 2047,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 276.1
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 3,
+      "semilla_sumo": 6,
+      "J": 613.83,
+      "vehiculos": 2047,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 300.2
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 3,
+      "semilla_sumo": 6,
+      "J": 529.98,
+      "vehiculos": 2047,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 265.93
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 3,
+      "semilla_sumo": 6,
+      "J": 876.71,
+      "vehiculos": 2047,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 429.31
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 4,
+      "semilla_sumo": 23,
+      "J": 5294.01,
+      "vehiculos": 2042,
+      "sin_terminar": 483,
+      "tiempo_perdido_medio": 2325.9
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 4,
+      "semilla_sumo": 23,
+      "J": 635.29,
+      "vehiculos": 2042,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 316.9
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 4,
+      "semilla_sumo": 23,
+      "J": 693.82,
+      "vehiculos": 2042,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 343.65
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 4,
+      "semilla_sumo": 1,
+      "J": 5205.1,
+      "vehiculos": 2042,
+      "sin_terminar": 474,
+      "tiempo_perdido_medio": 2261.06
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 4,
+      "semilla_sumo": 1,
+      "J": 538.3,
+      "vehiculos": 2042,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 270.57
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 4,
+      "semilla_sumo": 1,
+      "J": 743.72,
+      "vehiculos": 2042,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 368.63
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 4,
+      "semilla_sumo": 2,
+      "J": 4798.2,
+      "vehiculos": 2042,
+      "sin_terminar": 434,
+      "tiempo_perdido_medio": 2101.59
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 4,
+      "semilla_sumo": 2,
+      "J": 561.07,
+      "vehiculos": 2042,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 280.55
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 4,
+      "semilla_sumo": 2,
+      "J": 748.57,
+      "vehiculos": 2042,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 369.03
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 4,
+      "semilla_sumo": 3,
+      "J": 5198.59,
+      "vehiculos": 2042,
+      "sin_terminar": 473,
+      "tiempo_perdido_medio": 2264.48
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 4,
+      "semilla_sumo": 3,
+      "J": 630.52,
+      "vehiculos": 2042,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 313.59
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 4,
+      "semilla_sumo": 3,
+      "J": 774.28,
+      "vehiculos": 2042,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 383.09
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 4,
+      "semilla_sumo": 4,
+      "J": 4973.35,
+      "vehiculos": 2042,
+      "sin_terminar": 451,
+      "tiempo_perdido_medio": 2166.82
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 4,
+      "semilla_sumo": 4,
+      "J": 555.47,
+      "vehiculos": 2042,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 278.61
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 4,
+      "semilla_sumo": 4,
+      "J": 4242.57,
+      "vehiculos": 2042,
+      "sin_terminar": 386,
+      "tiempo_perdido_medio": 1860.4
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 4,
+      "semilla_sumo": 5,
+      "J": 5205.4,
+      "vehiculos": 2042,
+      "sin_terminar": 473,
+      "tiempo_perdido_medio": 2280.82
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 4,
+      "semilla_sumo": 5,
+      "J": 632.18,
+      "vehiculos": 2042,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 315.66
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 4,
+      "semilla_sumo": 5,
+      "J": 853.08,
+      "vehiculos": 2042,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 419.81
+    },
+    {
+      "plan": "netconvert",
+      "semilla_demanda": 4,
+      "semilla_sumo": 6,
+      "J": 5003.4,
+      "vehiculos": 2042,
+      "sin_terminar": 455,
+      "tiempo_perdido_medio": 2199.61
+    },
+    {
+      "plan": "algoritmo",
+      "semilla_demanda": 4,
+      "semilla_sumo": 6,
+      "J": 786.56,
+      "vehiculos": 2042,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 389.03
+    },
+    {
+      "plan": "uniforme",
+      "semilla_demanda": 4,
+      "semilla_sumo": 6,
+      "J": 723.87,
+      "vehiculos": 2042,
+      "sin_terminar": 0,
+      "tiempo_perdido_medio": 356.89
+    }
+  ]
+}

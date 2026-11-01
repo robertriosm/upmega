@@ -60,7 +60,7 @@ def barras(ax, base, opt, titulo, etiquetas):
                 mutation_aspect=max(base + opt) / 6,
                 facecolor=color, edgecolor="none"))
         # etiqueta directa: solo la reduccion, no un numero en cada barra
-        ax.text(xi, max(a, b) * 1.04, f"−{(1 - b / a) * 100:.0f}%",
+        ax.text(xi, max(a, b) * 1.04, f"-{(1 - b / a) * 100:.0f}%",
                 ha="center", va="bottom", fontsize=9.5, color=TINTA_2)
 
     ax.set_xticks(x)
@@ -96,7 +96,7 @@ def fitness(run, destino):
                 ha="left", va="top", fontsize=10, color=TINTA_2)
 
     ax.set_xlabel("generación", fontsize=10, color=TINTA_2)
-    ax.set_ylabel("J = viaje + 1.1 × espera  (s)", fontsize=10, color=TINTA_2)
+    ax.set_ylabel("J = viaje + 1.1 · espera  (s)", fontsize=10, color=TINTA_2)
     ax.tick_params(colors=APAGADO, length=0, labelsize=10)
     ax.set_title("Evolución del mejor individuo", fontsize=12.5, color=TINTA,
                  pad=14, loc="left")
@@ -121,7 +121,7 @@ def main(run):
     fig.legend(handles=[plt.Line2D([], [], marker="s", linestyle="none", markersize=9,
                                    color=AZUL, label="netconvert (punto de partida)"),
                         plt.Line2D([], [], marker="s", linestyle="none", markersize=9,
-                                   color=NARANJA, label="SGA (mejor solución)")],
+                                   color=NARANJA, label="AGS (mejor solución)")],
                loc="lower center", ncol=2, frameon=False, fontsize=10.5,
                labelcolor=TINTA_2, bbox_to_anchor=(0.5, -0.02))
 

@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch, Rectangle
 
 AZUL, NARANJA = "#2a78d6", "#eb6834"
-VERDE, AMBAR = "#2f8f4e", "#d99a2b"
+VERDE, AMBAR, ROJO = "#2f8f4e", "#d99a2b", "#c0392b"
 TINTA, TINTA_2, APAGADO = "#0b0b0b", "#52514e", "#898781"
 LINEA, FONDO = "#c3c2b7", "#fcfcfb"
 
@@ -64,7 +64,7 @@ def evaluacion():
     fig, ax = lienzo(10, 2.6)
     y, h = 10, 14
     etapas = [("Genoma", "440 enteros"), ("Red SUMO", "110 planes"),
-              ("Simulación", "763 vehículos"), ("Tripinfo", "por vehículo"),
+              ("Simulación", "2002 vehículos"), ("Tripinfo", "por vehículo"),
               ("Aptitud", "F = 1/J")]
     w, sep = 15.5, 5.5
     for i, (t, s) in enumerate(etapas):
@@ -88,7 +88,7 @@ def codificacion():
                              (34, 13, "peso 12", None, False), (49, 18, "desfase 25 %", None, True)]:
         caja(ax, x, 30, w, 7, t, color=col, punteado=pt)
 
-    ax.text(0, 25, "REPARTO DEL CICLO — 45 s", fontsize=7.5, color=APAGADO)
+    ax.text(0, 25, "REPARTO DEL CICLO: 45 s", fontsize=7.5, color=APAGADO)
     tramos = [(0, 21.3, AMBAR, .38, "ámbar fijo\n12 s"), (21.3, 24.9, TINTA, .12, "mínimos 7+7\n14 s"),
               (46.2, 33.8, AZUL, .28, "a repartir 19 s\n30 : 12")]
     for x, w, c, a, t in tramos:
@@ -97,8 +97,11 @@ def codificacion():
     ax.add_patch(Rectangle((0, 15), 80, 8, facecolor="none", edgecolor=LINEA, linewidth=1))
 
     ax.text(0, 10.5, "PLAN RESULTANTE", fontsize=7.5, color=APAGADO)
-    plan = [(0, 35.6, VERDE, .5, "verde 20 s"), (35.6, 10.7, AMBAR, .62, "6 s"),
-            (46.3, 23.1, VERDE, .5, "verde 13 s"), (69.4, 10.6, AMBAR, .62, "6 s")]
+    # mismas cuentas que Controller.reparto: 19 s a repartir en 30:12 dan 13.57 y
+    # 5.43, se truncan a 13 y 5 y el segundo sobrante va a la de mayor resto,
+    # asi que los verdes son 7+14 = 21 y 7+5 = 12; 80 unidades de ancho = 45 s
+    plan = [(0, 37.33, VERDE, .5, "verde 21 s"), (37.33, 10.67, AMBAR, .62, "6 s"),
+            (48.0, 21.33, VERDE, .5, "verde 12 s"), (69.33, 10.67, AMBAR, .62, "6 s")]
     for x, w, c, a, t in plan:
         ax.add_patch(Rectangle((x, 1.5), w, 8, facecolor=c, alpha=a, edgecolor="none"))
         ax.text(x + w / 2, 5.5, t, ha="center", va="center", fontsize=8, color=TINTA)
@@ -109,10 +112,152 @@ def codificacion():
     guardar(fig, "diag_codificacion.png")
 
 
+# ------------------------------------------------- estructuras de interseccion
+# color y opacidad de cada letra del estado de una fase de SUMO
+SENAL = {"G": (VERDE, .5), "y": (AMBAR, .62), "r": (ROJO, .42)}
+
+
+def via(ax, puntos):
+    xs, ys = zip(*puntos)
+    ax.plot(xs, ys, color=TINTA_2, lw=1.4, solid_capstyle="butt")
+
+
+def movimiento(ax, a, b, estilo="arc3", grueso=1.0):
+    ax.add_patch(FancyArrowPatch(a, b, arrowstyle="-|>", mutation_scale=9, linewidth=grueso,
+                                 color=TINTA_2, connectionstyle=estilo, zorder=2))
+
+
+def llave(ax, x1, x2, y, texto, ha="center"):
+    """corchete bajo un tramo de tiempo, con su etiqueta debajo"""
+    ax.plot([x1, x1, x2, x2], [y + 1, y, y, y + 1], color=TINTA_2, lw=1)
+    xt = {"center": (x1 + x2) / 2, "left": x1, "right": x2}[ha]
+    ax.text(xt, y - 0.8, texto, ha=ha, va="top", fontsize=7.5, color=TINTA_2)
+
+
+def cronograma(ax, x0, esc, fases, filas, y_fase, y_estado, alto=5.5):
+    """
+    dibuja el plan como una barra por via, alineadas en el tiempo.
+
+    fases: [(duracion, estado)] tal como estan en el tlLogic.
+    filas: [(nombre, letra, y, textos)]: letra es la posicion del estado que
+    corresponde a esa via y textos rotula los tramos por su fase inicial.
+    Las fases consecutivas con el mismo color se funden en un solo tramo,
+    que es lo que ve un conductor de esa via.
+    """
+    bordes = [x0]
+    for d, _ in fases:
+        bordes.append(bordes[-1] + d * esc)
+    y_min = min(f[2] for f in filas) - 1
+    for x in bordes:
+        ax.plot([x, x], [y_min, y_fase + 2], color=LINEA, lw=0.8, ls=(0, (3, 2)), zorder=0)
+    ax.text(x0 - 1.2, y_fase, "Fase", ha="right", va="center", fontsize=8, color=APAGADO)
+    ax.text(x0 - 1.2, y_estado, "Estado", ha="right", va="center", fontsize=8, color=APAGADO)
+    for k, (_, estado) in enumerate(fases):
+        xc = (bordes[k] + bordes[k + 1]) / 2
+        ax.text(xc, y_fase, str(k + 1), ha="center", va="center", fontsize=8, color=TINTA_2)
+        ax.text(xc, y_estado, estado, ha="center", va="center", fontsize=7, color=TINTA_2,
+                family="monospace")
+
+    for nombre, letra, y, textos in filas:
+        ax.text(x0 - 1.2, y + alto / 2, nombre, ha="right", va="center", fontsize=9, color=TINTA)
+        k = 0
+        while k < len(fases):
+            c = fases[k][1][letra]
+            j = k
+            while j + 1 < len(fases) and fases[j + 1][1][letra] == c:
+                j += 1
+            color, alfa = SENAL[c]
+            # fondo opaco debajo para que las guias de fase no crucen la barra
+            ax.add_patch(Rectangle((bordes[k], y), bordes[j + 1] - bordes[k], alto,
+                                   facecolor=FONDO, edgecolor="none", zorder=1))
+            ax.add_patch(Rectangle((bordes[k], y), bordes[j + 1] - bordes[k], alto,
+                                   facecolor=color, alpha=alfa, edgecolor="none", zorder=1))
+            if k in textos:
+                ax.text((bordes[k] + bordes[j + 1]) / 2, y + alto / 2, textos[k], ha="center",
+                        va="center", fontsize=7.5, color=TINTA, zorder=3)
+            k = j + 1
+        ax.add_patch(Rectangle((x0, y), bordes[-1] - x0, alto, facecolor="none",
+                               edgecolor=LINEA, linewidth=1, zorder=2))
+    return bordes
+
+
+def leyenda_ambar(ax, x, y):
+    ax.add_patch(Rectangle((x, y - 0.9), 2.4, 1.8, facecolor=AMBAR, alpha=.62, edgecolor="none"))
+    ax.text(x + 3.4, y, "ámbar: fijo, se copia de la red y no es gen", va="center", fontsize=7.5,
+            color=APAGADO)
+
+
+def cuatro_fases():
+    """
+    interseccion 1903163106 (la del anexo), con el plan de netconvert y los
+    genes que lo reproducen: peso = duracion - minimo, es decir 39 - 7 = 32
+    """
+    fig, ax = lienzo(10, 4.4)
+    ax.text(0, 42.5, "INTERSECCIÓN 1903163106: CUATRO FASES", fontsize=7.5, color=APAGADO)
+
+    # croquis: avenida hacia el norte, calle hacia el este, ambas de un sentido
+    via(ax, [(11.5, 40), (11.5, 24.5), (1, 24.5)])
+    via(ax, [(18.5, 40), (18.5, 24.5), (29, 24.5)])
+    via(ax, [(1, 17.5), (11.5, 17.5), (11.5, 3)])
+    via(ax, [(29, 17.5), (18.5, 17.5), (18.5, 3)])
+    ax.plot([11.5, 18.5], [16.3, 16.3], color=TINTA, lw=2.2)
+    ax.plot([10.3, 10.3], [17.5, 24.5], color=TINTA, lw=2.2)
+    movimiento(ax, (14, 4), (14, 14.8), grueso=1.4)
+    movimiento(ax, (2, 20), (8.8, 20), grueso=1.4)
+    movimiento(ax, (14, 16.8), (14, 38))
+    movimiento(ax, (14, 16.8), (28, 22), "angle3,angleA=90,angleB=0")
+    movimiento(ax, (10.8, 20), (28, 20))
+    movimiento(ax, (10.8, 20), (16, 38), "angle3,angleA=0,angleB=90")
+    ax.text(19.5, 7, "Avenida", fontsize=9, color=TINTA)
+    ax.text(1.5, 26, "Calle", fontsize=9, color=TINTA)
+
+    ax.text(38, 42.5, "PLAN DE NETCONVERT Y SUS GENES: CICLO 90, PESOS 32 Y 32, DESFASE 0 %",
+            fontsize=7.5, color=APAGADO)
+    fases = [(39, "GGrr"), (6, "yyrr"), (39, "rrGG"), (6, "rryy")]
+    filas = [("Avenida", 0, 25, {0: "verde 39 s", 2: "rojo 45 s = verde + ámbar de la calle"}),
+             ("Calle", 2, 17, {0: "rojo 45 s = verde + ámbar de la avenida", 2: "verde 39 s"})]
+    b = cronograma(ax, 44, 0.6, fases, filas, y_fase=38, y_estado=34.5)
+    llave(ax, b[0], b[1], 14, "peso 1 = 32: verde de la avenida")
+    llave(ax, b[2], b[3], 14, "peso 2 = 32: verde de la calle")
+    llave(ax, b[0], b[4], 7.5, "ciclo = 90 s")
+    leyenda_ambar(ax, 44, 1.8)
+    guardar(fig, "diag_cuatro_fases.png")
+
+
+def tres_fases():
+    """
+    interseccion 1438391835: semaforo a mitad de cuadra sobre una avenida de
+    dos carriles. Pesos iniciales 79 - 7 = 72 para el verde y 5 - 3 = 2 para el rojo
+    """
+    fig, ax = lienzo(10, 3.8)
+    ax.text(0, 36.5, "INTERSECCIÓN 1438391835: TRES FASES", fontsize=7.5, color=APAGADO)
+
+    # croquis: avenida de dos carriles hacia el norte, sin calle transversal
+    via(ax, [(11.5, 2), (11.5, 34)])
+    via(ax, [(18.5, 2), (18.5, 34)])
+    ax.plot([15, 15], [2, 34], color=LINEA, lw=1, ls=(0, (4, 3)))
+    ax.plot([11.5, 18.5], [15, 15], color=TINTA, lw=2.2)
+    for x in (13.25, 16.75):
+        movimiento(ax, (x, 3.5), (x, 13.5), grueso=1.4)
+        movimiento(ax, (x, 15.5), (x, 32))
+    ax.text(19.5, 6, "Avenida", fontsize=9, color=TINTA)
+
+    ax.text(38, 36.5, "PLAN DE NETCONVERT Y SUS GENES: CICLO 90, PESOS 72 Y 2, DESFASE 0 %",
+            fontsize=7.5, color=APAGADO)
+    fases = [(79, "GG"), (6, "yy"), (5, "rr")]
+    filas = [("Avenida", 0, 19, {0: "verde 79 s"})]
+    b = cronograma(ax, 44, 0.6, fases, filas, y_fase=32, y_estado=28.5)
+    llave(ax, b[0], b[1], 15, "peso 1 = 72: verde de la avenida")
+    llave(ax, b[2], b[3], 15, "peso 2 = 2: rojo, fase propia", ha="right")
+    llave(ax, b[0], b[3], 8, "ciclo = 90 s")
+    leyenda_ambar(ax, 44, 2)
+    guardar(fig, "diag_tres_fases.png")
+
+
 # ---------------------------------------------------------------- seleccion
 def seleccion():
     fig, ax = lienzo(10, 3.2)
-    ax.text(0, 29, "POBLACIÓN — 30 INDIVIDUOS ORDENADOS POR APTITUD", fontsize=7.5, color=APAGADO)
+    ax.text(0, 29, "POBLACIÓN: 30 INDIVIDUOS ORDENADOS POR APTITUD", fontsize=7.5, color=APAGADO)
     sorteados = {0, 3, 7, 12, 19}
     for i in range(24):
         x = i * 2.7
@@ -120,9 +265,9 @@ def seleccion():
         ax.add_patch(Rectangle((x, 22), 2.1, 4.5, facecolor=AZUL if dentro else "none",
                                alpha=.75 if dentro else 1, edgecolor=LINEA if not dentro else "none",
                                linewidth=1))
-    ax.text(65.5, 24.2, "… hasta 30", fontsize=8, color=APAGADO)
+    ax.text(65.5, 24.2, "... hasta 30", fontsize=8, color=APAGADO)
 
-    ax.text(0, 16.5, "UN TORNEO — 5 SORTEADOS AL AZAR, CON REEMPLAZO", fontsize=7.5, color=APAGADO)
+    ax.text(0, 16.5, "UN TORNEO: 5 SORTEADOS AL AZAR, CON REEMPLAZO", fontsize=7.5, color=APAGADO)
     for i in range(5):
         ax.add_patch(Rectangle((i * 5, 9.5), 4, 4.5, facecolor=AZUL, alpha=.55, edgecolor="none"))
     flecha(ax, 10.5, 8.8, 10.5, 5.2)
@@ -143,10 +288,10 @@ def seleccion():
 def cruce():
     fig, ax = lienzo(10, 3.6)
 
-    ax.text(0, 33, "EMPAREJAMIENTO EN ANILLO — 12 PADRES", fontsize=7.5, color=APAGADO)
-    for i, et in enumerate(["0", "1", "2", "3", "…", "11"]):
+    ax.text(0, 33, "EMPAREJAMIENTO EN ANILLO: 12 PADRES", fontsize=7.5, color=APAGADO)
+    for i, et in enumerate(["0", "1", "2", "3", "...", "11"]):
         x = 3 + i * 7
-        if et == "…":
+        if et == "...":
             ax.text(x, 27.5, et, ha="center", va="center", fontsize=10, color=APAGADO)
             continue
         ax.add_patch(plt.Circle((x, 27.5), 2.6, facecolor="none", edgecolor=LINEA, linewidth=1.3))
@@ -160,7 +305,7 @@ def cruce():
                       "no se combinan nunca",
             fontsize=8, color=APAGADO, va="center")
 
-    ax.text(0, 21, "CRUCE UNIFORME — UNA MONEDA POR CADA UNO DE LOS 440 GENES", fontsize=7.5, color=APAGADO)
+    ax.text(0, 21, "CRUCE UNIFORME: UNA MONEDA POR CADA UNO DE LOS 440 GENES", fontsize=7.5, color=APAGADO)
     mascara = [0, 1, 1, 0, 1, 0, 0, 1]
     for fila, (y, col, alpha, et) in enumerate([(15, AZUL, .75, "padre A"), (8.5, NARANJA, .7, "padre B")]):
         ax.text(-1, y + 2, et, fontsize=8, color=TINTA_2, ha="right", va="center")
@@ -184,17 +329,17 @@ def cruce():
 def mutacion():
     fig, ax = lienzo(10, 2.9)
 
-    ax.text(0, 26, "HIJO — SE RECORREN LOS 440 GENES", fontsize=7.5, color=APAGADO)
+    ax.text(0, 26, "HIJO: SE RECORREN LOS 440 GENES", fontsize=7.5, color=APAGADO)
     mutados = {2, 7}
     for i in range(12):
         x = i * 5.4
         m = i in mutados
         ax.add_patch(Rectangle((x, 19), 4.4, 4.5, facecolor=NARANJA if m else "none",
                                alpha=.8 if m else 1, edgecolor="none" if m else LINEA, linewidth=1))
-    ax.text(66, 21.2, "… hasta 440", fontsize=8, color=APAGADO)
-    ax.text(0, 16, "los marcados sacaron menos de 0.02 — unos 9 de los 440", fontsize=8, color=NARANJA)
+    ax.text(66, 21.2, "... hasta 440", fontsize=8, color=APAGADO)
+    ax.text(0, 16, "los marcados sacaron menos de 0.02: unos 9 de los 440", fontsize=8, color=NARANJA)
 
-    ax.text(0, 10.5, "QUÉ LE PASA A UN GEN MUTADO — EJEMPLO: UN GEN DE CICLO", fontsize=7.5, color=APAGADO)
+    ax.text(0, 10.5, "QUÉ LE PASA A UN GEN MUTADO: EJEMPLO: UN GEN DE CICLO", fontsize=7.5, color=APAGADO)
     ax.plot([0, 62], [5, 5], color=TINTA_2, lw=1.3)
     for x in (0, 62):
         ax.plot([x, x], [4.2, 5.8], color=TINTA_2, lw=1.3)
@@ -247,7 +392,7 @@ def actividad():
     ax.text(cx, dy + 4.5, "¿generación < 150?", ha="center", va="center", fontsize=9, color=TINTA)
     flecha(ax, cx, H - 43, cx, dy + 9)
 
-    ops = [(dy - 12, "Seleccionar 12 padres  ·  torneo K=5"),
+    ops = [(dy - 12, "Seleccionar 12 padres  ·  torneo τ=5"),
            (dy - 21, "Cruzar  ·  29 hijos, cruce uniforme"),
            (dy - 30, "Mutar  ·  reemplazo, Pm = 0.02"),
            (dy - 39, "Reemplazar  ·  1 élite + 29 hijos"),
@@ -287,6 +432,8 @@ if __name__ == "__main__":
     actividad()
     evaluacion()
     codificacion()
+    cuatro_fases()
+    tres_fases()
     seleccion()
     cruce()
     mutacion()

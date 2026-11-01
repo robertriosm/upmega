@@ -1,0 +1,30 @@
+{
+  "run": "g150p30m12touuniP2c2600s42",
+  "lote": 6,
+  "nucleos_logicos": 12,
+  "comando": "python aceleracion.py g150p30m12touuniP2c2600s42 --lote 6 --workers 1 6 3 1",
+  "mediciones": [
+    {
+      "procesos": 1,
+      "tiempo_s": 68.6
+    },
+    {
+      "procesos": 6,
+      "tiempo_s": 18.5
+    },
+    {
+      "procesos": 3,
+      "tiempo_s": 26.6
+    },
+    {
+      "procesos": 1,
+      "tiempo_s": 66.0
+    }
+  ],
+  "aceleracion_contra_media_secuencial": {
+    "1": 1.0,
+    "3": 2.53,
+    "6": 3.64
+  },
+  "nota": "La primera medicion secuencial (68.6 s) se tomo de la salida en consola de esa misma ejecucion: la version anterior del script guardaba los tiempos en un diccionario por cantidad de procesos y la segunda medicion secuencial (66.0 s) la sobrescribio en el JSON. El script ya guarda todas las repeticiones."
+}

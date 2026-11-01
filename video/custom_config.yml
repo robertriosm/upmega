@@ -1,0 +1,13 @@
+# configuracion de manimgl para los videos de la tesis; se lee al correr
+# manimgl desde esta carpeta
+directories:
+  subdirs:
+    output: "salida"
+camera:
+  background_color: "#16181D"
+  fps: 30
+file_writer:
+  # FFmpeg del paquete imageio-ffmpeg instalado en .venv, sin instalarlo en el sistema
+  ffmpeg_bin: "C:/Users/noone/Documents/GitHub/upmega/video/.venv/Lib/site-packages/imageio_ffmpeg/binaries/ffmpeg-win-x86_64-v7.1.exe"
+text:
+  font: "Segoe UI"

@@ -1,0 +1,93 @@
+{
+  "timestamp": "2026-10-27T06:47:48",
+  "origen": "csv (--solo-analisis)",
+  "red": "test.net.xml",
+  "demanda": {
+    "generador": "demand.generate",
+    "seed": 42,
+    "ventana_s": 1000,
+    "solicitados": [
+      250,
+      500,
+      1000,
+      1500,
+      2000,
+      2200,
+      2400,
+      2600,
+      2800,
+      3000,
+      4000,
+      6000,
+      8000
+    ]
+  },
+  "medicion": {
+    "fuente": "TraCI (suscripciones por arista)",
+    "periodo_s": 120,
+    "definiciones": "Edie: K = veh-h / (T x km carril), Q = veh-km / (T x km carril)",
+    "aristas_internas": "excluidas",
+    "carriles": "solo los que admiten 'passenger'"
+  },
+  "simulacion": {
+    "flags": [
+      "--time-to-teleport",
+      "-1",
+      "--tripinfo-output.write-unfinished",
+      "true",
+      "--tripinfo-output.write-undeparted",
+      "true",
+      "--seed",
+      "23",
+      "--no-step-log",
+      "true",
+      "--no-warnings",
+      "true"
+    ],
+    "max_steps": 10000,
+    "max_quiet": 600
+  },
+  "densidad_critica": {
+    "k_c": 11.25,
+    "q_capacidad": 209.83,
+    "saturacion_alcanzada": true,
+    "metodo": "rama de carga (t_fin <= 1000 s); mediana de Q por franjas de 2.5 veh/km/carril con al menos 5 intervalos; k_c = primera franja que alcanza el 95% del flujo de capacidad",
+    "intervalos_de_carga": 104,
+    "curva_K": [
+      0.594,
+      1.215,
+      2.027,
+      3.116,
+      4.931,
+      6.079,
+      7.506,
+      8.984,
+      10.837,
+      13.776,
+      17.938,
+      32.418,
+      60.104
+    ],
+    "curva_Q": [
+      22.11,
+      43.37,
+      70.02,
+      93.62,
+      136.23,
+      165.68,
+      179.23,
+      189.64,
+      206.73,
+      208.79,
+      212.28,
+      199.62,
+      102.44
+    ]
+  },
+  "flujo_en_capacidad_veh_h_carril": 209.83,
+  "recomendacion": {
+    "capacidad_solicitados": 2200,
+    "limite_solicitados": 2600,
+    "primera_trabada_solicitados": 2800
+  }
+}

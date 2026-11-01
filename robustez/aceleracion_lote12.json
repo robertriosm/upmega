@@ -1,0 +1,20 @@
+{
+  "run": "g150p30m12touuniP2c2600s42",
+  "lote": 12,
+  "nucleos_logicos": 12,
+  "tiempo_s": {
+    "1": 358.9,
+    "2": 154.6,
+    "4": 55.1,
+    "6": 44.4,
+    "8": 45.4
+  },
+  "aceleracion": {
+    "1": 1.0,
+    "2": 2.32,
+    "4": 6.51,
+    "6": 8.09,
+    "8": 7.9
+  },
+  "nota": "La medicion secuencial de este lote es anomala: 29.9 s por simulacion, frente a unos 11 s en el lote de 6, por lo que las aceleraciones calculadas contra ella (mayores que el numero de procesos) no son validas. Solo se usa la comparacion entre 6 y 8 procesos (44.4 s frente a 45.4 s), que no depende de la medicion secuencial."
+}

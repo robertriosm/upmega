@@ -1,0 +1,152 @@
+{
+  "run": "g150p30m12touuniP2c1000s42",
+  "vehiculos": 763,
+  "sin_terminar": {
+    "base": 0,
+    "mejor": 0
+  },
+  "espera": {
+    "base": {
+      "media": 71.63,
+      "min": 0.0,
+      "p25": 31.0,
+      "p50": 62.0,
+      "p75": 103.5,
+      "p90": 147.8,
+      "max": 296.0
+    },
+    "mejor": {
+      "media": 38.39,
+      "min": 0.0,
+      "p25": 15.0,
+      "p50": 34.0,
+      "p75": 57.0,
+      "p90": 76.0,
+      "max": 147.0
+    },
+    "cambio_media_pct": -46.41
+  },
+  "viaje": {
+    "base": {
+      "media": 189.48,
+      "min": 13.0,
+      "p25": 121.0,
+      "p50": 176.0,
+      "p75": 252.0,
+      "p90": 313.0,
+      "max": 493.0
+    },
+    "mejor": {
+      "media": 157.08,
+      "min": 14.0,
+      "p25": 105.0,
+      "p50": 151.0,
+      "p75": 201.0,
+      "p90": 245.0,
+      "max": 372.0
+    },
+    "cambio_media_pct": -17.1
+  },
+  "tiempo_perdido_media": {
+    "base": 119.2,
+    "mejor": 86.77,
+    "cambio_pct": -27.2
+  },
+  "velocidad_media_m_s": {
+    "base": 7.84,
+    "mejor": 8.97,
+    "cambio_pct": 14.41
+  },
+  "horas_vehiculo": {
+    "viaje_base": 40.2,
+    "viaje_mejor": 33.3,
+    "espera_base": 15.2,
+    "espera_mejor": 8.1
+  },
+  "descomposicion": {
+    "movimiento_base": 117.85,
+    "movimiento_mejor": 118.7,
+    "detenido_base": 71.63,
+    "detenido_mejor": 38.39
+  },
+  "J": {
+    "base": 268.28,
+    "mejor": 199.31
+  },
+  "evaluaciones": 4379,
+  "generacion_del_mejor": 145,
+  "convergencia": {
+    "J_por_generacion": {
+      "0": 268.3,
+      "50": 214.0,
+      "100": 200.9,
+      "150": 199.3
+    },
+    "mejora_0_50": 54.2,
+    "mejora_ultimas_50": 1.6,
+    "media_poblacion_final_J": 209.4,
+    "mejor_J": 199.3,
+    "generacion_del_mejor": 145
+  },
+  "espacial": {
+    "aristas": 387,
+    "tiempo_perdido_total_base": 86685.7,
+    "tiempo_perdido_total_mejor": 62237.4,
+    "cambio_pct": -28.2,
+    "aristas_mejoran": 193,
+    "aristas_empeoran": 194,
+    "aristas_para_mitad_del_ahorro": 10,
+    "vias_con_nombre": 0,
+    "top5_vias_pct_del_ahorro": 0.0,
+    "top5_vias": [],
+    "vias_que_empeoran": 0,
+    "peores_vias": []
+  },
+  "concordancia_J_tiempo_perdido": {
+    "evaluaciones": 4379,
+    "pares_concordantes_pct": 97.93,
+    "discordantes_con_dJ_menor_1s_pct": 76.1
+  },
+  "desfases_anulados": {
+    "J_mejor_resimulado": 199.31,
+    "J_sin_desfases": 225.26,
+    "deterioro_pct": 13.02,
+    "sin_terminar": 0
+  },
+  "referencia_uniforme": {
+    "ciclo_optimo_s": 35,
+    "J_optimo": 196.43,
+    "diferencia_vs_GA_pct": 1.47,
+    "barrido": {
+      "20": 203.93,
+      "25": 203.86,
+      "30": 202.85,
+      "31": 202.09,
+      "32": 200.29,
+      "33": 198.03,
+      "34": 197.47,
+      "35": 196.43,
+      "36": 198.8,
+      "37": 199.51,
+      "38": 198.64,
+      "39": 199.51,
+      "40": 200.1,
+      "45": 204.22,
+      "50": 207.17,
+      "55": 213.7,
+      "60": 219.91,
+      "65": 229.14,
+      "70": 239.99,
+      "75": 246.57,
+      "80": 250.81,
+      "85": 256.27,
+      "90": 268.28,
+      "95": 275.83,
+      "100": 285.87,
+      "105": 292.17,
+      "110": 304.76,
+      "115": 313.84,
+      "120": 321.36
+    }
+  }
+}
